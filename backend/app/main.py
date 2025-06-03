@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from app.api.routes import cases as cases_router, users as users_router
+from app.api.routes import cases as cases_router, users as users_router, incident_reports as reports_router, victims as victims_router, analytics as analytics_router
 from app.database import init_db
 from app.core.middleware import add_middleware
 
@@ -9,6 +9,9 @@ add_middleware(app)
 
 app.include_router(cases_router.router)
 app.include_router(users_router.router)
+app.include_router(reports_router.router)
+app.include_router(victims_router.router)
+app.include_router(analytics_router.router)
 
 @app.get("/")
 async def root():

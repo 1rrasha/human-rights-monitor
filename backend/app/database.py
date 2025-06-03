@@ -2,7 +2,9 @@ from beanie import init_beanie
 from motor.motor_asyncio import AsyncIOMotorClient
 from app.models.case import Case
 from app.models.user import User
+from app.models.incident_report import IncidentReport,ReportEvidenceDocument
 from app.core.config import settings
+from app.models.victim import Victim, VictimRiskAssessment
 import ssl
 
 async def init_db():
@@ -27,7 +29,7 @@ async def init_db():
         
         await init_beanie(
             database=client[settings.DATABASE_NAME],
-            document_models=[Case, User]
+            document_models=[Case, User, IncidentReport, ReportEvidenceDocument,Victim, VictimRiskAssessment]
         )
         print(f"Connected to MongoDB database: {settings.DATABASE_NAME}")
     except Exception as e:

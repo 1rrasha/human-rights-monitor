@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
 from bson import ObjectId
@@ -7,11 +7,13 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    role: Optional[Literal["user", "admin", "case_worker"]] = "user"  # Optional, defaults to "user"
 
 class UserOut(BaseModel):
     id: str = Field(..., alias="_id")
     email: EmailStr
     full_name: str
+    role: str  # Include role in output
     is_active: bool
     created_at: datetime
 

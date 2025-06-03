@@ -1,34 +1,53 @@
-# from beanie import Document, Indexed
-# from pydantic import BaseModel, Field
-# from typing import List, Optional, Dict
-# from datetime import datetime
-# from bson import ObjectId
+from beanie import Document, PydanticObjectId
+from pydantic import BaseModel, Field, EmailStr
+from datetime import datetime
+from typing import List, Optional, Dict
+from bson import ObjectId
 
-# class ContactInfo(BaseModel):
-#     email: Optional[str] = None
-#     phone: Optional[str] = None
-#     preferred_contact: Optional[str] = None
+class ContactInfo(BaseModel):
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+    preferred_contact: Optional[str] = None  # e.g., "email", "phone"
 
-# class IncidentDetails(BaseModel):
-#     date: datetime
-#     location: Location
-#     description: str
-#     violation_types: List[str]
+class IncidentLocation(BaseModel):
+    country: str
+    city: Optional[str] = None
+    coordinates: Optional[Dict] = None  # GeoJSON Point: {"type": "Point", "coordinates": [lon, lat]}
 
-# class IncidentReport(Document):
-#     report_id: Indexed(str, unique=True)
-#     reporter_type: str
-#     anonymous: bool
-#     contact_info: Optional[ContactInfo] = None
-#     incident_details: IncidentDetails
-#     evidence: List[Evidence] = []
-#     status: str
-#     assigned_to: Optional[ObjectId] = None
-#     created_at: datetime
+class IncidentDetails(BaseModel):
+    date: datetime
+    location: IncidentLocation
+    description: str
+    violation_types: List[str]
 
-#     class Settings:
-#         name = "incident_reports"
-#         indexes = [
-#             [("incident_details.location.coordinates", "2dsphere")],
-#             [("status", 1)]
-#         ]
+class ReportEvidence(BaseModel):
+    type: str  # e.g., "video", "photo", "document"
+    url: str
+    description: Optional[str] = None
+
+class IncidentReport(Document):
+    report_id: str = Field(..., unique=True)  # e.g., "IR-2023-0789"
+    reporter_type: str  # e.g., "victim", "witness"
+    anonymous: bool = False
+    contact_info: Optional[ContactInfo] = None
+    incident_details: IncidentDetails
+    evidence: List[ReportEvidence] = []
+    status: str = "new"  # e.g., "new", "under_review", "closed"
+    assigned_to: Optional[str] = None  # PydanticObjectId to str for simplicity
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "incident_reports"
+        indexes = ["report_id"]
+
+class ReportEvidenceDocument(Document):
+    report_id: str  # References IncidentReport.report_id
+    type: str
+    url: str
+    description: Optional[str] = None
+    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Settings:
+        name = "report_evidence"
+        indexes = ["report_id"]
