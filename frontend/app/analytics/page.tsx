@@ -1,0 +1,11 @@
+import { AnalyticsHeader } from "@/components/analytics/analytics-header"
+import { AnalyticsDashboard } from "@/components/analytics/analytics-dashboard"
+
+export default function AnalyticsPage() {
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <AnalyticsHeader />
+      <AnalyticsDashboard />
+    </div>
+  )
+}

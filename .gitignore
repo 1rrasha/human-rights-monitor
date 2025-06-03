@@ -1,0 +1,95 @@
+# macOS system files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Python/FastAPI (backend)
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependency directories
+backend/node_modules/  # In case backend has Node.js dependencies
+backend/.venv/
+
+# Logs
+backend/logs/
+backend/*.log
+backend/*.log.*
+
+# Testing/Coverage
+backend/.pytest_cache/
+backend/coverage/
+backend/.coverage
+backend/htmlcov/
+
+# Build artifacts
+backend/dist/
+backend/build/
+backend/*.egg-info/
+
+# FastAPI temporary files
+backend/.cache/
+
+# Next.js (frontend)
+# Dependency directories
+frontend/node_modules/
+frontend/.pnp
+frontend/.pnp.js
+
+# Build output
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Environment variables
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# Vercel
+frontend/.vercel
+
+# Testing
+frontend/.cache/
+frontend/coverage/
+
+# Turbo (if using monorepo)
+frontend/.turbo/
+
+# General
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Sensitive files
+*.pem
+*.key
+*.crt
+*.pub
+
+# Project-specific
+# Media uploads (if stored locally)
+backend/uploads/
+backend/evidence/
+
+# Database dumps
+*.sql
+*.mongo
