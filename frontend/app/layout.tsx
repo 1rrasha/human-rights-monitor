@@ -1,11 +1,10 @@
+"use client"
 import type React from "react"
-import type { Metadata } from "next"
 import { Inter, Montserrat, Roboto_Mono } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { SidebarProvider } from "@/components/sidebar-provider"
-import { MainSidebar } from "@/components/main-sidebar"
 import { Toaster } from "@/components/ui/toaster"
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // Font configuration
 const inter = Inter({
@@ -26,32 +25,48 @@ const robotoMono = Roboto_Mono({
   display: "swap",
 })
 
-export const metadata: Metadata = {
-  title: "Human Rights Monitor",
-  description: "Management Information System for Human Rights Monitoring",
-    generator: 'v0.dev'
-}
-
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
+  const queryClient = new QueryClient();
   return (
     <html
-      lang="en"
-      suppressHydrationWarning
-      className={`${inter.variable} ${montserrat.variable} ${robotoMono.variable}`}
-    >
+    lang="en"
+    suppressHydrationWarning
+    className={`${inter.variable} ${montserrat.variable} ${robotoMono.variable}`}
+  >
+      <head>
+        <title>Human Rights Monitor</title>
+        <meta name="description" content="Monitor and report human rights violations" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <meta name="keywords" content="human rights, monitoring, violations, reporting" />
+        <meta name="author" content="Human Rights Monitor Team" />
+        <link rel="icon" href="/human_logo.png" />
+        <meta property="og:title" content="Human Rights Monitor" />
+        <meta property="og:description" content="Monitor and report human rights violations" />
+        <meta property="og:url" content="https://humanrightsmonitor.org" /> {/* Replace with actual URL */}
+        <meta property="og:site_name" content="Human Rights Monitor" />
+        <meta property="og:image" content="/og-image.png" /> {/* Replace with actual OG image path */}
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Human Rights Monitor" />
+        <meta property="og:locale" content="en_US" />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Human Rights Monitor" />
+        <meta name="twitter:description" content="Monitor and report human rights violations" />
+        <meta name="twitter:image" content="/twitter-image.png" /> {/* Replace with actual Twitter image path */}
+      </head>
       <body className="font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <SidebarProvider>
-            <div className="flex h-screen">
-              <MainSidebar />
-              <main className="flex-1 overflow-auto">{children}</main>
-            </div>
-            <Toaster />
-          </SidebarProvider>
+        <main className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </main>
+        <Toaster />
         </ThemeProvider>
       </body>
     </html>
