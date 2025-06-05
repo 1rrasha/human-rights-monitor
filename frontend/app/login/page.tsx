@@ -1,28 +1,38 @@
 'use client';
 
-import Image from "next/image";
-import Link from "next/link";
-import Navbar from "@/components/Navbar";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "../../hooks/useAuth";
+import Image from 'next/image';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import Navbar from '@/components/Navbar';
+import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
   const { login, isLoading } = useAuth();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/dashboard';
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setLocalError(null);
+    console.log('[Login] Submitting login form with email:', email);
+    console.log('[Login] Redirect target:', redirect);
 
     try {
       await login({ email, password });
-      router.push("/dashboard");
+      // Handle navigation after successful login
+      router.push(redirect);
     } catch (err: any) {
-      setError(err.message || "Login failed. Please check your credentials.");
+      console.error('[Login] Login failed:', err);
+      const errorMessage = err.response?.data?.detail || err.message || 'Invalid email or password. Please try again.';
+      setLocalError(errorMessage);
+      setPassword(''); // Clear password field on error
+      console.log('[Login] Set local error:', errorMessage);
     }
   };
 
@@ -42,7 +52,7 @@ export default function Login() {
             Sign in to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            Or{" "}
+            Or{' '}
             <Link href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
               create a new account
             </Link>
@@ -51,9 +61,20 @@ export default function Login() {
 
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
           <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {error && (
-                <div className="text-red-600 text-sm text-center">{error}</div>
+            <form className="space-y-6" onSubmit={handleSubmit} noValidate>
+              {localError && (
+                <div className="rounded-md bg-red-50 p-4 mb-4" role="alert">
+                  <div className="flex">
+                    <div className="flex-shrink-0">
+                      <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-red-800">{localError}</p>
+                    </div>
+                  </div>
+                </div>
               )}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
@@ -69,6 +90,8 @@ export default function Login() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                    aria-invalid={!!localError}
+                    aria-describedby={localError ? 'email-error' : undefined}
                   />
                 </div>
               </div>
@@ -87,6 +110,8 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500 sm:text-sm"
+                    aria-invalid={!!localError}
+                    aria-describedby={localError ? 'password-error' : undefined}
                   />
                 </div>
               </div>
@@ -117,7 +142,7 @@ export default function Login() {
                   disabled={isLoading}
                   className="flex w-full justify-center rounded-md border border-transparent bg-blue-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50"
                 >
-                  {isLoading ? "Signing in..." : "Sign in"}
+                  {isLoading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
             </form>

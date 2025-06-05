@@ -4,37 +4,35 @@ from datetime import datetime
 from typing import List, Optional
 from bson import ObjectId
 
-# These should be BaseModel, not Document (they're embedded documents)
+
 class Location(BaseModel):
     country: str
     region: Optional[str] = None
-    coordinates: Optional[dict] = None  # GeoJSON Point: {"type": "Point", "coordinates": [lon, lat]}
+    coordinates: Optional[dict] = None  
 
 class Evidence(BaseModel):
-    type: str  # e.g., "photo", "video"
+    type: str  
     url: str
     description: Optional[str] = None
     date_captured: Optional[datetime] = None
 
 class Perpetrator(BaseModel):
     name: str
-    type: str  # e.g., "military_unit", "individual"
-
-# This should be a Document (main collection)
+    type: str 
 class Case(Document):
-    case_id: str = Field(..., unique=True)  # e.g., "HRM-2023-0425"
+    case_id: str = Field(..., unique=True) 
     title: str
     description: str
     violation_types: List[str]
-    status: str = "new"  # e.g., "new", "under_investigation", "resolved"
-    priority: str = "medium"  # e.g., "low", "medium", "high"
+    status: str = "new"  
+    priority: str = "medium" 
     location: Location
     date_occurred: datetime
     date_reported: datetime
-    victims: List[str] = []  # Changed from PydanticObjectId to str for simplicity
+    victims: List[str] = []  
     perpetrators: List[Perpetrator] = []
     evidence: List[Evidence] = []
-    created_by: str  # Changed from PydanticObjectId to str for simplicity
+    created_by: str 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

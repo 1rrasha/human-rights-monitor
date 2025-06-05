@@ -1,8 +1,5 @@
 import api from '../config/api';
 
-// API_URL matches the base URL in api.ts, so we only append the endpoint path
-const API_URL = '/auth/';
-
 export interface LoginData {
   email: string;
   password: string;
@@ -10,9 +7,9 @@ export interface LoginData {
 
 export interface SignupData {
   email: string;
-  password: string;
   full_name: string;
-  role: string;
+  password: string;
+  role?: string;
 }
 
 export interface AuthResponse {
@@ -29,44 +26,63 @@ export interface UserResponse {
   created_at: string;
 }
 
-class AuthService {
-  async login(data: LoginData): Promise<AuthResponse> {
-    const formData = new FormData();
-    formData.append('username', data.email); // API expects 'username' for email
-    formData.append('password', data.password);
-    formData.append('grant_type', 'password'); // Required by /login_session endpoint
+const authService = {
+  login: async (credentials: LoginData): Promise<AuthResponse> => {
+    console.log('[authService] Login attempt with email:', credentials.email);
+    const formData = new URLSearchParams();
+    formData.append('grant_type', 'password');
+    formData.append('username', credentials.email);
+    formData.append('password', credentials.password);
 
-    const response = await api.post(API_URL + 'login_session', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
-
-    console.log(response.data);
-
-    if (response.data.access_token) {
-      localStorage.setItem('access_token', response.data.access_token);
+    try {
+      const response = await api.post('/auth/login_session', formData, {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      });
+      const authResponse: AuthResponse = response.data;
+      console.log('[authService] Login successful, token:', authResponse.access_token);
+      localStorage.setItem('access_token', authResponse.access_token);
+      document.cookie = `auth_token=${authResponse.access_token}; path=/; Secure; SameSite=Strict`;
+      console.log('[authService] Stored access_token in localStorage and auth_token in cookies');
+      return authResponse;
+    } catch (error: any) {
+      console.error('[authService] Login failed:', error.response?.data || error.message);
+      throw error;
     }
-    return response.data;
-  }
+  },
 
-  async signup(data: SignupData): Promise<UserResponse> {
-    const response = await api.post(API_URL + 'signup', data);
-    return response.data;
-  }
+  signup: async (data: SignupData): Promise<void> => {
+    console.log('[authService] Signup attempt with email:', data.email);
+    try {
+      await api.post('/auth/signup', {
+        email: data.email,
+        full_name: data.full_name,
+        password: data.password,
+        role: data.role || 'user',
+      });
+      console.log('[authService] Signup successful');
+    } catch (error: any) {
+      console.error('[authService] Signup failed:', error.response?.data || error.message);
+      throw error;
+    }
+  },
 
-  async getCurrentUser(): Promise<UserResponse> {
-    const response = await api.get(API_URL + 'me');
-    return response.data;
-  }
-
-  logout(): void {
+  logout: () => {
+    console.log('[authService] Logging out, removing tokens');
     localStorage.removeItem('access_token');
-  }
+    document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+  },
 
-  isAuthenticated(): boolean {
-    return !!localStorage.getItem('access_token');
-  }
-}
+  getCurrentUser: async (): Promise<UserResponse | null> => {
+    console.log('[authService] Fetching current user');
+    try {
+      const response = await api.get('/auth/me');
+      console.log('[authService] Current user fetched:', response.data.email);
+      return response.data;
+    } catch (error: any) {
+      console.error('[authService] Failed to fetch current user:', error.response?.data || error.message);
+      return null;
+    }
+  },
+};
 
-export default new AuthService();
+export default authService;

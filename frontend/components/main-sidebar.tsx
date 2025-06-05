@@ -1,11 +1,12 @@
-"use client"
+'use client';
 
-import { useSidebar } from "./sidebar-provider"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent } from "@/components/ui/sheet"
-import { cn } from "@/lib/utils"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useSidebar } from './sidebar-provider';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChart3,
   FileText,
@@ -19,54 +20,77 @@ import {
   Settings,
   LogOut,
   HelpCircle,
-} from "lucide-react"
-import { ThemeToggle } from "./theme-toggle"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useState, useEffect } from "react"
+} from 'lucide-react';
+import { ThemeToggle } from './theme-toggle';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 const navItems = [
   {
-    title: "Dashboard",
-    href: "/",
+    title: 'Dashboard',
+    href: '/',
     icon: BarChart3,
   },
   {
-    title: "Cases",
-    href: "/cases",
+    title: 'Cases',
+    href: '/cases',
     icon: FolderOpen,
     badge: 3,
   },
   {
-    title: "Reports",
-    href: "/reports",
+    title: 'Reports',
+    href: '/reports',
     icon: FileText,
     badge: 5,
   },
   {
-    title: "Victims/Witnesses",
-    href: "/victims",
+    title: 'Victims/Witnesses',
+    href: '/victims',
     icon: Users,
   },
   {
-    title: "Analytics",
-    href: "/analytics",
+    title: 'Analytics',
+    href: '/analytics',
     icon: BarChart3,
   },
-]
+];
 
 export function MainSidebar() {
-  const { expanded, toggleSidebar, isMobile, mobileOpen, setMobileOpen } = useSidebar()
-  const pathname = usePathname()
-  const [mounted, setMounted] = useState(false)
+  const { expanded, toggleSidebar, isMobile, mobileOpen, setMobileOpen } = useSidebar();
+  const { user, logout } = useAuth();
+  const pathname = usePathname();
+  const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   // Prevent hydration mismatch
   useEffect(() => {
-    setMounted(true)
-  }, [])
+    setMounted(true);
+  }, []);
 
-  if (!mounted) return null
+  const handleLogout = () => {
+    console.log('[MainSidebar] Initiating logout');
+    logout();
+    console.log('[MainSidebar] Tokens cleared, navigating to /login');
+    router.push('/login');
+    if (isMobile) {
+      setMobileOpen(false);
+    }
+  };
+
+  // Get user initials for avatar
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((part) => part.charAt(0))
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  if (!mounted) return null;
 
   if (isMobile) {
     return (
@@ -84,17 +108,18 @@ export function MainSidebar() {
           <SheetContent side="left" className="p-0 w-[280px]">
             <div className="flex flex-col h-full bg-background">
               <div className="p-4 border-b flex items-center justify-between">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-full">
                   <div className="relative">
-                    <Shield className="h-6 w-6 text-primary" />
-                    <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-                    </span>
+                    <Image
+                      src="/human_logo.png"
+                      alt="Human Rights Monitor Logo"
+                      width={48}
+                      height={48}
+                      className="object-contain"
+                    />
                   </div>
-                  <span className="font-heading font-bold text-lg">HRM</span>
                 </div>
-                <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)}>
+                <Button variant="ghost" size="icon" onClick={() => setMobileOpen(false)} className="absolute right-4">
                   <X className="h-5 w-5" />
                 </Button>
               </div>
@@ -103,11 +128,11 @@ export function MainSidebar() {
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10 border-2 border-primary">
                     <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                    <AvatarFallback>JD</AvatarFallback>
+                    <AvatarFallback>{user ? getInitials(user.full_name) : 'JD'}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">John Doe</div>
-                    <div className="text-xs text-muted-foreground">Human Rights Officer</div>
+                    <div className="font-medium">{user ? user.full_name : 'Guest'}</div>
+                    <div className="text-xs text-muted-foreground">{user ? user.role : 'Not logged in'}</div>
                   </div>
                 </div>
               </div>
@@ -119,10 +144,10 @@ export function MainSidebar() {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md transition-colors relative group",
+                      'flex items-center gap-3 px-3 py-2 rounded-md transition-colors relative group',
                       pathname === item.href
-                        ? "bg-primary text-primary-foreground font-medium"
-                        : "hover:bg-muted text-foreground",
+                        ? 'bg-primary text-primary-foreground font-medium'
+                        : 'hover:bg-muted text-foreground',
                     )}
                   >
                     <item.icon className="h-5 w-5" />
@@ -155,7 +180,7 @@ export function MainSidebar() {
               </div>
 
               <div className="p-4 border-t flex justify-between items-center">
-                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+                <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={handleLogout}>
                   <LogOut className="h-4 w-4" />
                   <span>Logout</span>
                 </Button>
@@ -165,35 +190,36 @@ export function MainSidebar() {
           </SheetContent>
         </Sheet>
       </>
-    )
+    );
   }
 
   return (
     <TooltipProvider delayDuration={300}>
       <div
         className={cn(
-          "h-screen bg-background border-r flex flex-col transition-all duration-300 ease-in-out relative z-10",
-          expanded ? "w-64" : "w-[70px]",
+          'h-screen bg-background border-r flex flex-col transition-all duration-300 ease-in-out relative z-10',
+          expanded ? 'w-64' : 'w-[70px]',
         )}
       >
         <div className="p-4 border-b flex items-center justify-between">
-          <div className="flex items-center gap-2 overflow-hidden">
+          <div className="flex items-center justify-center w-full">
             <div className="relative flex-shrink-0">
-              <Shield className="h-6 w-6 text-primary" />
-              <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-primary"></span>
-              </span>
+              <Image
+                src="/human_logo.png"
+                alt="Human Rights Monitor Logo"
+                width={48}
+                height={48}
+                className="object-contain"
+              />
             </div>
-            {expanded && <span className="font-heading font-bold text-lg truncate">HRM</span>}
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={toggleSidebar}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground absolute right-4"
           >
-            <PanelLeft className={cn("h-5 w-5 transition-transform", !expanded && "rotate-180")} />
+            <PanelLeft className={cn('h-5 w-5 transition-transform', !expanded && 'rotate-180')} />
           </Button>
         </div>
 
@@ -202,11 +228,11 @@ export function MainSidebar() {
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 border-2 border-primary">
                 <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback>{user ? getInitials(user.full_name) : 'JD'}</AvatarFallback>
               </Avatar>
               <div className="overflow-hidden">
-                <div className="font-medium truncate">John Doe</div>
-                <div className="text-xs text-muted-foreground truncate">Human Rights Officer</div>
+                <div className="font-medium truncate">{user ? user.full_name : 'Guest'}</div>
+                <div className="text-xs text-muted-foreground truncate">{user ? user.role : 'Not logged in'}</div>
               </div>
             </div>
           </div>
@@ -219,14 +245,14 @@ export function MainSidebar() {
                 <Link
                   href={item.href}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-md transition-colors relative group",
+                    'flex items-center gap-3 px-3 py-2 rounded-md transition-colors relative group',
                     pathname === item.href
-                      ? "bg-primary text-primary-foreground font-medium"
-                      : "hover:bg-muted text-foreground",
-                    !expanded && "justify-center",
+                      ? 'bg-primary text-primary-foreground font-medium'
+                      : 'hover:bg-muted text-foreground',
+                    !expanded && 'justify-center',
                   )}
                 >
-                  <item.icon className={cn("h-5 w-5", !expanded && "flex-shrink-0")} />
+                  <item.icon className={cn('h-5 w-5', !expanded && 'flex-shrink-0')} />
                   {expanded && (
                     <>
                       <span className="truncate">{item.title}</span>
@@ -259,7 +285,7 @@ export function MainSidebar() {
           ))}
         </nav>
 
-        <div className={cn("border-t", expanded ? "p-4 space-y-2" : "p-2 space-y-2")}>
+        <div className={cn('border-t', expanded ? 'p-4 space-y-2' : 'p-2 space-y-2')}>
           {expanded ? (
             <>
               <Button variant="outline" size="sm" className="w-full justify-start gap-2">
@@ -285,7 +311,6 @@ export function MainSidebar() {
                 </TooltipTrigger>
                 <TooltipContent side="right">Settings</TooltipContent>
               </Tooltip>
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="outline" size="icon" className="w-full">
@@ -294,7 +319,6 @@ export function MainSidebar() {
                 </TooltipTrigger>
                 <TooltipContent side="right">Help & Support</TooltipContent>
               </Tooltip>
-
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button variant="destructive" size="icon" className="w-full">
@@ -308,11 +332,11 @@ export function MainSidebar() {
         </div>
 
         <div
-          className={cn("p-4 border-t flex", expanded ? "justify-between items-center" : "flex-col gap-2 items-center")}
+          className={cn('p-4 border-t flex', expanded ? 'justify-between items-center' : 'flex-col gap-2 items-center')}
         >
           {expanded ? (
             <>
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground">
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={handleLogout}>
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
               </Button>
@@ -322,7 +346,7 @@ export function MainSidebar() {
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-muted-foreground">
+                  <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={handleLogout}>
                     <LogOut className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
@@ -334,5 +358,5 @@ export function MainSidebar() {
         </div>
       </div>
     </TooltipProvider>
-  )
+  );
 }
