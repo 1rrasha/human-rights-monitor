@@ -17,9 +17,6 @@ import base64
 import json
 import logging
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
 
 async def get_violation_analytics(
     start_date: Optional[datetime] = None,
@@ -68,8 +65,7 @@ async def get_violation_analytics(
     # Run aggregation on both collections
     cases_result = await Case.aggregate(pipeline).to_list()
     reports_result = await IncidentReport.aggregate(pipeline).to_list()
-    logger.debug(f"Cases result: {cases_result}")
-    logger.debug(f"Reports result: {reports_result}")
+
 
     # Combine results
     violation_counts = {}
@@ -78,12 +74,11 @@ async def get_violation_analytics(
         violation_counts[vt] = violation_counts.get(vt, 0) + item["count"]
 
     data = [ViolationCount(violation_type=k, count=v) for k, v in violation_counts.items()]
-    logger.debug(f"Violation data: {data}")
 
     # Generate Plotly bar chart
     if data:
         df = pd.DataFrame([d.dict() for d in data])
-        logger.debug(f"Violations DataFrame columns: {df.columns}")
+
         fig = px.bar(df, x="violation_type", y="count", title="Violations by Type")
         chart_spec = json.loads(fig.to_json())
     else:
@@ -134,8 +129,6 @@ async def get_geodata_analytics(
 
     cases_result = await Case.aggregate(pipeline).to_list()
     reports_result = await IncidentReport.aggregate(pipeline).to_list()
-    logger.debug(f"Geodata cases result: {cases_result}")
-    logger.debug(f"Geodata reports result: {reports_result}")
 
     geo_counts = {}
     for item in cases_result + reports_result:
@@ -145,12 +138,11 @@ async def get_geodata_analytics(
         geo_counts[country]["count"] += item["count"]
 
     data = [GeoDataPoint(country=k, count=v["count"], coordinates=v["coordinates"]) for k, v in geo_counts.items()]
-    logger.debug(f"Geodata: {data}")
+
 
     # Generate Plotly scatter map
     if data:
         df = pd.DataFrame([d.dict() for d in data])
-        logger.debug(f"Geodata DataFrame columns: {df.columns}")
         fig = px.scatter_geo(
             df,
             locations="country",
@@ -220,8 +212,6 @@ async def get_timeline_analytics(
 
     cases_result = await Case.aggregate(pipeline).to_list()
     reports_result = await IncidentReport.aggregate(pipeline).to_list()
-    logger.debug(f"Timeline cases result: {cases_result}")
-    logger.debug(f"Timeline reports result: {reports_result}")
 
     timeline_counts = {}
     for item in cases_result + reports_result:
@@ -229,12 +219,12 @@ async def get_timeline_analytics(
         timeline_counts[date] = timeline_counts.get(date, 0) + item["count"]
 
     data = [TimelinePoint(date=datetime.strptime(k, "%Y-%m-%d"), count=v) for k, v in timeline_counts.items()]
-    logger.debug(f"Timeline data: {data}")
+
 
     # Generate Plotly line chart
     if data:
         df = pd.DataFrame([{"date": d.date, "count": d.count} for d in data])
-        logger.debug(f"Timeline DataFrame columns: {df.columns}")
+
         fig = px.line(df, x="date", y="count", title="Violations Over Time")
         chart_spec = json.loads(fig.to_json())
     else:

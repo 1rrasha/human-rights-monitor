@@ -14,6 +14,9 @@ export const useCases = (params?: CasesQueryParams) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
     },
+    onError: (error) => {
+      console.error('Failed to create case:', error);
+    },
   });
 
   const updateCaseMutation = useMutation({
@@ -21,6 +24,10 @@ export const useCases = (params?: CasesQueryParams) => {
       casesService.updateCase(caseId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['case'] });
+    },
+    onError: (error) => {
+      console.error('Failed to update case:', error);
     },
   });
 
@@ -28,6 +35,10 @@ export const useCases = (params?: CasesQueryParams) => {
     mutationFn: (caseId: string) => casesService.deleteCase(caseId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cases'] });
+      queryClient.invalidateQueries({ queryKey: ['case'] }); // Invalidate specific case
+    },
+    onError: (error) => {
+      console.error('Failed to delete case:', error);
     },
   });
 
@@ -41,6 +52,9 @@ export const useCases = (params?: CasesQueryParams) => {
     isCreating: createCaseMutation.isPending,
     isUpdating: updateCaseMutation.isPending,
     isDeleting: deleteCaseMutation.isPending,
+    createError: createCaseMutation.error,
+    updateError: updateCaseMutation.error,
+    deleteError: deleteCaseMutation.error,
   };
 };
 
@@ -56,4 +70,4 @@ export const useCase = (caseId: string) => {
     isLoading,
     error,
   };
-}; 
+};

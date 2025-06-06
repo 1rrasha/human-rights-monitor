@@ -1,9 +1,10 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
-from typing import List, Optional, Any
+from typing import List, Optional, Any, Dict
 from bson import ObjectId
 from pydantic_core import core_schema
 from pydantic import GetCoreSchemaHandler
+from app.models.case import Case
 
 class PyObjectId(ObjectId):
     @classmethod
@@ -37,6 +38,11 @@ class Perpetrator(BaseModel):
     name: str
     type: str
 
+class UserInfo(BaseModel):
+    user_id: str
+    full_name: str
+    email: EmailStr
+
 class CaseCreate(BaseModel):
     case_id: str
     title: str
@@ -52,15 +58,20 @@ class CaseCreate(BaseModel):
     evidence: List[Evidence] = []
 
 class CaseUpdate(BaseModel):
-    status: Optional[str] = None
-    priority: Optional[str] = None
+    title: Optional[str] = None
     description: Optional[str] = None
     violation_types: Optional[List[str]] = None
-    perpetrators: Optional[List[Perpetrator]] = None
-    evidence: Optional[List[Evidence]] = None
+    status: Optional[str] = None
+    priority: Optional[str] = None
+    location: Optional[Dict[str, Any]] = None  # Flexible to handle coordinates
+    date_occurred: Optional[datetime] = None
+    date_reported: Optional[datetime] = None
+    victims: Optional[List[str]] = None
+    perpetrators: Optional[List[Dict[str, str]]] = None
+    evidence: Optional[List[Dict[str, Any]]] = None
 
 class CaseOut(BaseModel):
-    id: str = Field(..., alias="_id")
+    id: PyObjectId = Field(..., alias="_id")
     case_id: str
     title: str
     description: str
@@ -76,15 +87,23 @@ class CaseOut(BaseModel):
     created_by: str
     created_at: datetime
     updated_at: datetime
+    created_by_user: UserInfo
 
     @classmethod
-    def from_document(cls, doc):
-        """Convert from Document to Pydantic model"""
-        doc_dict = doc.dict()
-        doc_dict["_id"] = str(doc.id)
+    def from_document(cls, doc: Case | Dict) -> "CaseOut":
+        """Convert from Document or dict to Pydantic model"""
+        if isinstance(doc, dict):
+            doc_dict = doc
+        else:
+            doc_dict = doc.dict()
+            doc_dict["_id"] = str(doc.id)
         return cls(**doc_dict)
 
     class Config:
         populate_by_name = True
         arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
+        json_encoders = {
+            ObjectId: str,
+            datetime: lambda v: v.isoformat(),
+            PyObjectId: str
+        }

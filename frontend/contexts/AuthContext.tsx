@@ -34,17 +34,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const fetchUser = async () => {
-      console.log('[AuthContext] Fetching current user');
+
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
       setLoading(false);
-      console.log('[AuthContext] User fetched:', currentUser?.email || 'none');
+
     };
     fetchUser();
   }, []);
 
   const login = async (email: string, password: string) => {
-    console.log('[AuthContext] Login attempt with email:', email);
+
     setIsLoading(true);
     try {
       setError(null);

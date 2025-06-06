@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { Card, CardContent } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,210 +12,186 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
-  AlertTriangle,
-  Calendar,
-  Edit,
-  Eye,
-  FileText,
-  MapPin,
-  MoreHorizontal,
-  Trash,
-  Users,
-  Star,
-  Clock,
-  UserPlus,
-  Share,
-  MessageSquare,
-} from "lucide-react"
-import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Edit, Eye, MapPin, MoreHorizontal, Trash, Users, Star, UserPlus, Share } from "lucide-react";
+import { useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCases } from "@/hooks/useCases";
+import { CasesQueryParams, Case, UpdateCaseData } from "@/services/cases.service";
+import { formatDistanceToNow } from "date-fns";
+import { useRouter } from "next/navigation";
+import { CaseDetails } from "./case-details";
+import { CaseEdit } from "./case-edit";
+import { useToast } from "@/components/ui/use-toast";
 
-const cases = [
-  {
-    id: "HRM-2023-0425",
-    title: "Forced Displacement in Northern Region",
-    status: "under_investigation",
-    priority: "high",
-    location: "Northern Governorate, Syria",
-    date: "Apr 20, 2023",
-    victims: 15,
-    reports: 3,
-    assignedTo: {
-      name: "John Doe",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "JD",
-    },
-    lastUpdated: "2 hours ago",
-  },
-  {
-    id: "HRM-2023-0426",
-    title: "Arbitrary Detention of Journalists",
-    status: "new",
-    priority: "medium",
-    location: "Capital City, Yemen",
-    date: "Apr 22, 2023",
-    victims: 4,
-    reports: 2,
-    assignedTo: null,
-    lastUpdated: "1 day ago",
-  },
-  {
-    id: "HRM-2023-0427",
-    title: "Torture in Detention Facility",
-    status: "under_investigation",
-    priority: "high",
-    location: "Eastern Province, Syria",
-    date: "Apr 25, 2023",
-    victims: 8,
-    reports: 5,
-    assignedTo: {
-      name: "Sarah Johnson",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "SJ",
-    },
-    lastUpdated: "5 hours ago",
-  },
-  {
-    id: "HRM-2023-0428",
-    title: "Attacks on Medical Facilities",
-    status: "resolved",
-    priority: "medium",
-    location: "Southern Region, Yemen",
-    date: "Apr 28, 2023",
-    victims: 12,
-    reports: 4,
-    assignedTo: {
-      name: "Ahmed Hassan",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "AH",
-    },
-    lastUpdated: "3 days ago",
-  },
-  {
-    id: "HRM-2023-0429",
-    title: "Restriction of Freedom of Assembly",
-    status: "new",
-    priority: "low",
-    location: "Western District, Syria",
-    date: "May 1, 2023",
-    victims: 20,
-    reports: 2,
-    assignedTo: null,
-    lastUpdated: "12 hours ago",
-  },
-  {
-    id: "HRM-2023-0430",
-    title: "Forced Conscription of Minors",
-    status: "under_investigation",
-    priority: "high",
-    location: "Northern Region, Yemen",
-    date: "May 3, 2023",
-    victims: 7,
-    reports: 3,
-    assignedTo: {
-      name: "Maria Rodriguez",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "MR",
-    },
-    lastUpdated: "1 hour ago",
-  },
-  {
-    id: "HRM-2023-0431",
-    title: "Destruction of Cultural Heritage",
-    status: "new",
-    priority: "medium",
-    location: "Central District, Syria",
-    date: "May 5, 2023",
-    victims: 0,
-    reports: 1,
-    assignedTo: null,
-    lastUpdated: "2 days ago",
-  },
-  {
-    id: "HRM-2023-0432",
-    title: "Denial of Humanitarian Access",
-    status: "under_investigation",
-    priority: "high",
-    location: "Eastern Region, Yemen",
-    date: "May 8, 2023",
-    victims: 35,
-    reports: 6,
-    assignedTo: {
-      name: "John Doe",
-      avatar: "/placeholder.svg?height=32&width=32",
-      initials: "JD",
-    },
-    lastUpdated: "3 hours ago",
-  },
-]
+interface CaseListProps {
+  filters: CasesQueryParams;
+}
 
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "new":
-      return (
-        <Badge variant="outline" className="status-badge status-badge-new">
-          New
-        </Badge>
-      )
+      return <Badge variant="outline" className="status-badge status-badge-new">New</Badge>;
     case "under_investigation":
-      return (
-        <Badge variant="outline" className="status-badge status-badge-investigating">
-          Investigating
-        </Badge>
-      )
+      return <Badge variant="outline" className="status-badge status-badge-investigating">Investigating</Badge>;
     case "resolved":
-      return (
-        <Badge variant="outline" className="status-badge status-badge-resolved">
-          Resolved
-        </Badge>
-      )
+      return <Badge variant="outline" className="status-badge status-badge-resolved">Resolved</Badge>;
+    case "archived":
+      return <Badge variant="outline" className="status-badge status-badge-archived bg-red-300">Archived</Badge>;
     default:
-      return <Badge variant="outline">{status}</Badge>
+      return <Badge variant="outline">{status}</Badge>;
   }
-}
+};
 
 const getPriorityBadge = (priority: string) => {
   switch (priority) {
     case "high":
-      return <Badge className="priority-badge-high">High</Badge>
+      return <Badge className="priority-badge-high">High</Badge>;
     case "medium":
-      return <Badge className="priority-badge-medium">Medium</Badge>
+      return <Badge className="priority-badge-medium">Medium</Badge>;
     case "low":
-      return <Badge className="priority-badge-low">Low</Badge>
+      return <Badge className="priority-badge-low">Low</Badge>;
     default:
-      return <Badge>{priority}</Badge>
+      return <Badge>{priority}</Badge>;
   }
-}
+};
 
-export function CaseList() {
-  const [selectedCases, setSelectedCases] = useState<string[]>([])
-  const [starredCases, setStarredCases] = useState<string[]>([])
+export function CaseList({ filters }: CaseListProps) {
+  const { cases, isLoading, error, updateCase, deleteCase } = useCases(filters);
+  const { toast } = useToast();
+  const [selectedCases, setSelectedCases] = useState<string[]>([]);
+  const [starredCases, setStarredCases] = useState<string[]>([]);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
+  const router = useRouter();
 
   const toggleSelectAll = () => {
-    if (selectedCases.length === cases.length) {
-      setSelectedCases([])
+    if (selectedCases.length === cases?.length) {
+      setSelectedCases([]);
     } else {
-      setSelectedCases(cases.map((c) => c.id))
+      setSelectedCases(cases?.map((c) => c._id) || []);
     }
-  }
+  };
 
   const toggleSelect = (id: string) => {
     if (selectedCases.includes(id)) {
-      setSelectedCases(selectedCases.filter((caseId) => caseId !== id))
+      setSelectedCases(selectedCases.filter((caseId) => caseId !== id));
     } else {
-      setSelectedCases([...selectedCases, id])
+      setSelectedCases([...selectedCases, id]);
     }
-  }
+  };
 
   const toggleStar = (id: string) => {
     if (starredCases.includes(id)) {
-      setStarredCases(starredCases.filter((caseId) => caseId !== id))
+      setStarredCases(starredCases.filter((caseId) => caseId !== id));
     } else {
-      setStarredCases([...starredCases, id])
+      setStarredCases([...starredCases, id]);
     }
+  };
+
+  const handleViewCase = (caseItem: Case) => {
+    setSelectedCase(caseItem);
+    setIsViewDialogOpen(true);
+  };
+
+  const handleEditCase = (caseItem: Case) => {
+    setSelectedCase(caseItem);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleArchiveCase = (caseItem: Case) => {
+    setSelectedCase(caseItem);
+    setIsArchiveDialogOpen(true);
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (selectedCase) {
+      try {
+        await deleteCase(selectedCase.case_id);
+        setIsArchiveDialogOpen(false);
+        toast({ title: "Success", description: "Case archived successfully" });
+      } catch (error) {
+        console.error("Failed to archive case:", error);
+        toast({
+          title: "Error",
+          description: "Failed to archive case",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const handleSaveCase = async (updatedCase: Case) => {
+    try {
+      const updateData: UpdateCaseData = {
+        title: updatedCase.title,
+        description: updatedCase.description,
+        violation_types: updatedCase.violation_types,
+        status: updatedCase.status,
+        priority: updatedCase.priority,
+        location: updatedCase.location,
+        date_occurred: updatedCase.date_occurred,
+        date_reported: updatedCase.date_reported,
+        victims: updatedCase.victims,
+        perpetrators: updatedCase.perpetrators,
+        files: updatedCase.files, // Include files from CaseEdit
+      };
+      console.log("Updating case with data:", updateData);
+      await updateCase({
+        caseId: updatedCase.case_id,
+        data: updateData,
+      });
+      toast({ title: "Success", description: "Case updated successfully" });
+    } catch (error) {
+      console.error("Failed to update case:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update case",
+        variant: "destructive",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="data-card">
+        <CardContent className="p-6 text-center">
+          <p>Loading cases...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="data-card">
+        <CardContent className="p-6 text-center text-destructive">
+          <p>Error loading cases: {error.message}</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!cases || cases.length === 0) {
+    return (
+      <Card className="data-card">
+        <CardContent className="p-6 text-center">
+          <p>No cases found.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -260,21 +236,19 @@ export function CaseList() {
                   <TableHead>Status</TableHead>
                   <TableHead>Priority</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead>Date</TableHead>
                   <TableHead className="text-center">Victims</TableHead>
-                  <TableHead className="text-center">Reports</TableHead>
-                  <TableHead>Assigned To</TableHead>
-                  <TableHead>Last Updated</TableHead>
+                  <TableHead>Violation Types</TableHead>
+                  <TableHead>Created By</TableHead>
                   <TableHead className="w-[80px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {cases.map((caseItem) => (
-                  <TableRow key={caseItem.id} className="group">
+                  <TableRow key={caseItem._id} className="group">
                     <TableCell>
                       <Checkbox
-                        checked={selectedCases.includes(caseItem.id)}
-                        onCheckedChange={() => toggleSelect(caseItem.id)}
+                        checked={selectedCases.includes(caseItem._id)}
+                        onCheckedChange={() => toggleSelect(caseItem._id)}
                       />
                     </TableCell>
                     <TableCell>
@@ -284,67 +258,49 @@ export function CaseList() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => toggleStar(caseItem.id)}
+                            onClick={() => toggleStar(caseItem._id)}
                           >
                             <Star
-                              className={`h-4 w-4 ${starredCases.includes(caseItem.id) ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground group-hover:text-foreground"}`}
+                              className={`h-4 w-4 ${
+                                starredCases.includes(caseItem._id)
+                                  ? "fill-yellow-400 text-yellow-400"
+                                  : "text-muted-foreground group-hover:text-foreground"
+                              }`}
                             />
                             <span className="sr-only">Star case</span>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {starredCases.includes(caseItem.id) ? "Remove from starred" : "Add to starred"}
+                          {starredCases.includes(caseItem._id) ? "Remove from starred" : "Add to starred"}
                         </TooltipContent>
                       </Tooltip>
                     </TableCell>
-                    <TableCell className="font-medium font-mono">{caseItem.id}</TableCell>
+                    <TableCell className="font-medium font-mono">{caseItem.case_id}</TableCell>
                     <TableCell className="max-w-[200px] truncate font-medium">{caseItem.title}</TableCell>
                     <TableCell>{getStatusBadge(caseItem.status)}</TableCell>
                     <TableCell>{getPriorityBadge(caseItem.priority)}</TableCell>
                     <TableCell className="flex items-center gap-1 max-w-[150px] truncate">
                       <MapPin className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      {caseItem.location}
-                    </TableCell>
-                    <TableCell className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                      {caseItem.date}
+                      {caseItem.location.region}, {caseItem.location.country}
                     </TableCell>
                     <TableCell className="text-center">
                       <Badge variant="outline" className="flex items-center justify-center gap-1 w-10 mx-auto">
                         <Users className="h-3 w-3" />
-                        {caseItem.victims}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="flex items-center justify-center gap-1 w-8 mx-auto">
-                        <FileText className="h-3 w-3" />
-                        {caseItem.reports}
+                        {caseItem.victims.length}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {caseItem.assignedTo ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={caseItem.assignedTo.avatar || "/placeholder.svg"} />
-                            <AvatarFallback>{caseItem.assignedTo.initials}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm truncate max-w-[100px]">{caseItem.assignedTo.name}</span>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          <UserPlus className="h-3 w-3 mr-1" />
-                          Assign
-                        </Button>
-                      )}
+                      <div className="flex flex-wrap gap-1">
+                        {caseItem.violation_types.map((type, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {type}
+                          </Badge>
+                        ))}
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {caseItem.lastUpdated}
+                        {caseItem.created_by_user.full_name}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -353,35 +309,30 @@ export function CaseList() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 w-8 opacity-0 text-black group-hover:opacity-100 transition-opacity"
                           >
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
+                            <span className="sr-only text-black">Actions</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewCase(caseItem)}>
                             <Eye className="h-4 w-4 mr-2" />
                             <span>View Details</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditCase(caseItem)}>
                             <Edit className="h-4 w-4 mr-2" />
                             <span>Edit Case</span>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <MessageSquare className="h-4 w-4 mr-2" />
-                            <span>Add Comment</span>
-                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <AlertTriangle className="h-4 w-4 mr-2" />
-                            <span>Mark as High Priority</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => handleArchiveCase(caseItem)}
+                          >
                             <Trash className="h-4 w-4 mr-2" />
-                            <span>Delete Case</span>
+                            <span>Archive Case</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -393,6 +344,45 @@ export function CaseList() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedCase && (
+        <>
+          <CaseDetails
+            caseItem={selectedCase}
+            isOpen={isViewDialogOpen}
+            onClose={() => setIsViewDialogOpen(false)}
+            onEdit={handleEditCase}
+            onArchive={handleArchiveCase}
+          />
+
+          <CaseEdit
+            caseItem={selectedCase}
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+            onSave={handleSaveCase}
+          />
+        </>
+      )}
+
+      <AlertDialog open={isArchiveDialogOpen} onOpenChange={setIsArchiveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will archive the case "{selectedCase?.title}". Archived cases can be restored later if needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleArchiveConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Archive Case
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </TooltipProvider>
-  )
+  );
 }

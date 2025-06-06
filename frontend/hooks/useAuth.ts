@@ -21,11 +21,11 @@ export const useAuth = () => {
 
   const signupMutation = useMutation({
     mutationFn: (data: SignupData) => {
-      console.log('[useAuth] Initiating signup with data:', data.email);
+
       return authService.signup(data);
     },
     onSuccess: () => {
-      console.log('[useAuth] Signup successful, navigating to /login');
+
       // router.push('/login');
     },
     onError: (error: any) => {

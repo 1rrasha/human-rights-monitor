@@ -11,25 +11,42 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { CasesQueryParams } from "@/services/cases.service"
 
-export function CaseFilters() {
+interface CaseFiltersProps {
+  onFiltersChange: (filters: CasesQueryParams) => void
+}
+
+export function CaseFilters({ onFiltersChange }: CaseFiltersProps) {
+  const [filters, setFilters] = useState<CasesQueryParams>({ skip: 0, limit: 10 })
   const [activeFilters, setActiveFilters] = useState<string[]>([])
 
-  const addFilter = (filter: string) => {
+  const addFilter = (filter: string, key: keyof CasesQueryParams, value: string) => {
     if (!activeFilters.includes(filter)) {
       setActiveFilters([...activeFilters, filter])
+      const newFilters = { ...filters, [key]: value }
+      setFilters(newFilters)
+      onFiltersChange(newFilters)
     }
   }
 
-  const removeFilter = (filter: string) => {
+  const removeFilter = (filter: string, key: keyof CasesQueryParams) => {
     setActiveFilters(activeFilters.filter((f) => f !== filter))
+    const newFilters = { ...filters, [key]: undefined }
+    setFilters(newFilters)
+    onFiltersChange(newFilters)
   }
 
   return (
     <Card className="border-none shadow-none bg-transparent">
       <CardContent className="p-0 space-y-4">
         <div className="flex flex-wrap gap-2 items-center">
-          <Select defaultValue="all" onValueChange={(value) => value !== "all" && addFilter(`Status: ${value}`)}>
+          <Select
+            value={filters.status || "all"}
+            onValueChange={(value) =>
+              value !== "all" && addFilter(`Status: ${value}`, "status", value)
+            }
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -42,19 +59,16 @@ export function CaseFilters() {
             </SelectContent>
           </Select>
 
-          <Select defaultValue="all" onValueChange={(value) => value !== "all" && addFilter(`Priority: ${value}`)}>
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="Priority" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Priorities</SelectItem>
-              <SelectItem value="high">High</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="low">Low</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select defaultValue="all" onValueChange={(value) => value !== "all" && addFilter(`Country: ${value}`)}>
+          <Select
+            value={filters.location || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                removeFilter("Country: " + filters.location, "location")
+              } else {
+                addFilter(`Country: ${value}`, "location", value)
+              }
+            }}
+          >
             <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Country" />
             </SelectTrigger>
@@ -63,6 +77,26 @@ export function CaseFilters() {
               <SelectItem value="syria">Syria</SelectItem>
               <SelectItem value="yemen">Yemen</SelectItem>
               <SelectItem value="other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select
+            value={filters.violation_type || "all"}
+            onValueChange={(value) => {
+              if (value === "all") {
+                removeFilter("Violation: " + filters.violation_type, "violation_type")
+              } else {
+                addFilter(`Violation: ${value}`, "violation_type", value)
+              }
+            }}
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Violation Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="forced_displacement">Forced Displacement</SelectItem>
+              <SelectItem value="property_destruction">Property Destruction</SelectItem>
             </SelectContent>
           </Select>
 
@@ -81,15 +115,37 @@ export function CaseFilters() {
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
                       <Label htmlFor="from">From</Label>
-                      <Input id="from" type="date" />
+                      <Input
+                        id="from"
+                        type="date"
+                        onChange={(e) => {
+                          setFilters({ ...filters, from: e.target.value })
+                          onFiltersChange({ ...filters, from: e.target.value })
+                        }}
+                      />
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="to">To</Label>
-                      <Input id="to" type="date" />
+                      <Input
+                        id="to"
+                        type="date"
+                        onChange={(e) => {
+                          setFilters({ ...filters, to: e.target.value })
+                          onFiltersChange({ ...filters, to: e.target.value })
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
-                <Button onClick={() => addFilter("Date: Custom Range")}>Apply Date Range</Button>
+                <Button
+                  onClick={() => {
+                    if (filters.from || filters.to) {
+                      addFilter("Date: Custom Range", "date_range", "custom")
+                    }
+                  }}
+                >
+                  Apply Date Range
+                </Button>
               </div>
             </PopoverContent>
           </Popover>
@@ -107,121 +163,48 @@ export function CaseFilters() {
                   <h4 className="font-medium">Violation Types</h4>
                   <Separator />
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type1"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Arbitrary Detention")
-                          else removeFilter("Type: Arbitrary Detention")
-                        }}
-                      />
-                      <Label htmlFor="type1">Arbitrary Detention</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type2"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Forced Displacement")
-                          else removeFilter("Type: Forced Displacement")
-                        }}
-                      />
-                      <Label htmlFor="type2">Forced Displacement</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type3"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Torture")
-                          else removeFilter("Type: Torture")
-                        }}
-                      />
-                      <Label htmlFor="type3">Torture</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type4"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Property Destruction")
-                          else removeFilter("Type: Property Destruction")
-                        }}
-                      />
-                      <Label htmlFor="type4">Property Destruction</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type5"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Freedom Restriction")
-                          else removeFilter("Type: Freedom Restriction")
-                        }}
-                      />
-                      <Label htmlFor="type5">Freedom Restriction</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="type6"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Type: Other")
-                          else removeFilter("Type: Other")
-                        }}
-                      />
-                      <Label htmlFor="type6">Other</Label>
-                    </div>
+                    {[
+                      "Forced Displacement",
+                      "Property Destruction",
+                    ].map((type) => (
+                      <div key={type} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={type.toLowerCase().replace(" ", "_")}
+                          onCheckedChange={(checked) => {
+                            const value = type.toLowerCase().replace(" ", "_")
+                            if (checked) {
+                              addFilter(`Type: ${type}`, "violation_type", value)
+                            } else {
+                              removeFilter(`Type: ${type}`, "violation_type")
+                            }
+                          }}
+                        />
+                        <Label htmlFor={type.toLowerCase().replace(" ", "_")}>{type}</Label>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <h4 className="font-medium">Assigned To</h4>
-                  <Separator />
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="assigned1"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Assigned: Me")
-                          else removeFilter("Assigned: Me")
-                        }}
-                      />
-                      <Label htmlFor="assigned1">Me</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="assigned2"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Assigned: Unassigned")
-                          else removeFilter("Assigned: Unassigned")
-                        }}
-                      />
-                      <Label htmlFor="assigned2">Unassigned</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="assigned3"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Assigned: Team A")
-                          else removeFilter("Assigned: Team A")
-                        }}
-                      />
-                      <Label htmlFor="assigned3">Team A</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="assigned4"
-                        onCheckedChange={(checked) => {
-                          if (checked) addFilter("Assigned: Team B")
-                          else removeFilter("Assigned: Team B")
-                        }}
-                      />
-                      <Label htmlFor="assigned4">Team B</Label>
-                    </div>
-                  </div>
-                </div>
-
                 <div className="flex justify-end">
-                  <Button variant="outline" size="sm" className="mr-2" onClick={() => setActiveFilters([])}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mr-2"
+                    onClick={() => {
+                      setActiveFilters([])
+                      setFilters({ skip: 0, limit: 10 })
+                      onFiltersChange({ skip: 0, limit: 10 })
+                    }}
+                  >
                     Reset
                   </Button>
-                  <Button size="sm">Apply Filters</Button>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      onFiltersChange(filters)
+                    }}
+                  >
+                    Apply Filters
+                  </Button>
                 </div>
               </div>
             </PopoverContent>
@@ -241,20 +224,32 @@ export function CaseFilters() {
                   variant="ghost"
                   size="icon"
                   className="h-4 w-4 ml-1 hover:bg-transparent"
-                  onClick={() => removeFilter(filter)}
+                  onClick={() => {
+                    const key = filter.startsWith("Status")
+                      ? "status"
+                      : filter.startsWith("Country")
+                      ? "location"
+                      : filter.startsWith("Violation") || filter.startsWith("Type")
+                      ? "violation_type"
+                      : "date_range"
+                    removeFilter(filter, key)
+                  }}
                 >
                   <X className="h-3 w-3" />
                   <span className="sr-only">Remove filter</span>
                 </Button>
               </Badge>
             ))}
-
             {activeFilters.length > 1 && (
               <Button
                 variant="ghost"
                 size="sm"
                 className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setActiveFilters([])}
+                onClick={() => {
+                  setActiveFilters([])
+                  setFilters({ skip: 0, limit: 10 })
+                  onFiltersChange({ skip: 0, limit: 10 })
+                }}
               >
                 Clear all filters
               </Button>

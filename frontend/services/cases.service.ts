@@ -27,17 +27,21 @@ export interface Case {
     date_captured: string;
   }>;
   created_by: string;
+  created_by_user: {
+    user_id: string;
+    full_name: string;
+    email: string;
+  };
   created_at: string;
   updated_at: string;
 }
 
 export interface CreateCaseData {
-  case_id: string;
   title: string;
   description: string;
   violation_types: string[];
-  status: 'new';
-  priority: 'medium';
+  status: string;
+  priority: string;
   location: {
     country: string;
     region: string;
@@ -56,6 +60,7 @@ export interface CreateCaseData {
     description: string;
     date_captured: string;
   }>;
+  files?: File[];
 }
 
 export interface UpdateCaseData {
@@ -63,16 +68,23 @@ export interface UpdateCaseData {
   priority?: string;
   description?: string;
   violation_types?: string[];
-  perpetrators?: Array<{
-    name: string;
-    type: string;
-  }>;
+  perpetrators?: Array<{ name: string; type: string }>;
   evidence?: Array<{
     type: string;
     url: string;
     description: string;
     date_captured: string;
   }>;
+  files?: File[];
+  title?: string;
+  victims?: string[];
+  location?: {
+    country: string;
+    region: string;
+    coordinates: Record<string, any>;
+  };
+  date_occurred?: string;
+  date_reported?: string;
 }
 
 export interface CasesQueryParams {
@@ -95,17 +107,41 @@ export const casesService = {
   },
 
   createCase: async (data: CreateCaseData) => {
-    const response = await api.post<Case>('/cases/', data);
+    const formData = new FormData();
+    // Stringify the case data
+    formData.append('case', JSON.stringify({ ...data, files: undefined }));
+    // Append files if provided
+    if (data.files) {
+      data.files.forEach((file, index) => {
+        formData.append(`files[${index}]`, file);
+      });
+    }
+    const response = await api.post<Case>('/cases/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return response.data;
   },
 
   updateCase: async (caseId: string, data: UpdateCaseData) => {
-    const response = await api.patch<Case>(`/cases/${caseId}`, data);
+    const formData = new FormData();
+    const caseUpdateJson = JSON.stringify({ ...data, files: undefined });
+    console.log("Sending case_update:", caseUpdateJson); // Debug log
+    formData.append('case_update', caseUpdateJson);
+    if (data.files) {
+      data.files.forEach((file, index) => {
+        formData.append(`files[${index}]`, file);
+        console.log(`Appending file[${index}]:`, file.name); // Debug log
+      });
+    }
+    const response = await api.patch<Case>(`/cases/${caseId}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    console.log("Backend response:", response.data); // Debug log
     return response.data;
   },
 
   deleteCase: async (caseId: string) => {
-    const response = await api.delete(`/cases/${caseId}`);
+    const response = await api.delete<string>(`/cases/${caseId}`);
     return response.data;
   },
-}; 
+};

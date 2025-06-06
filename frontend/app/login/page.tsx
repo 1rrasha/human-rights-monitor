@@ -20,8 +20,7 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLocalError(null);
-    console.log('[Login] Submitting login form with email:', email);
-    console.log('[Login] Redirect target:', redirect);
+
 
     try {
       await login({ email, password });
@@ -32,7 +31,7 @@ export default function Login() {
       const errorMessage = err.response?.data?.detail || err.message || 'Invalid email or password. Please try again.';
       setLocalError(errorMessage);
       setPassword(''); // Clear password field on error
-      console.log('[Login] Set local error:', errorMessage);
+
     }
   };
 

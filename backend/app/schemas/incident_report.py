@@ -42,6 +42,7 @@ class ReportEvidence(BaseModel):
     type: str
     url: str
     description: Optional[str] = None
+    date_captured: Optional[datetime] = None
 
 class IncidentReportCreate(BaseModel):
     report_id: str
@@ -52,10 +53,18 @@ class IncidentReportCreate(BaseModel):
     evidence: List[ReportEvidence] = []
 
 class IncidentReportUpdate(BaseModel):
+    reporter_type: Optional[str] = None
+    anonymous: Optional[bool] = None
+    contact_info: Optional[ContactInfo] = None
+    incident_details: Optional[IncidentDetails] = None
     status: Optional[str] = None
     assigned_to: Optional[str] = None
-    incident_details: Optional[IncidentDetails] = None
     evidence: Optional[List[ReportEvidence]] = None
+
+class AssignedUser(BaseModel):
+    id: str
+    name: Optional[str]
+    email: Optional[EmailStr]
 
 class IncidentReportOut(BaseModel):
     id: str = Field(..., alias="_id")
@@ -66,15 +75,9 @@ class IncidentReportOut(BaseModel):
     incident_details: IncidentDetails
     evidence: List[ReportEvidence]
     status: str
-    assigned_to: Optional[str]
+    assigned_to: Optional[AssignedUser]
     created_at: datetime
     updated_at: datetime
-
-    @classmethod
-    def from_document(cls, doc):
-        doc_dict = doc.dict()
-        doc_dict["_id"] = str(doc.id)
-        return cls(**doc_dict)
 
     class Config:
         populate_by_name = True

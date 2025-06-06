@@ -1,9 +1,8 @@
-from beanie import Document, PydanticObjectId
+from beanie import Document, Link, PydanticObjectId
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import List, Optional
-from bson import ObjectId
-
+from app.models.user import User  # Explicitly import your User model
 
 class Location(BaseModel):
     country: str
@@ -19,6 +18,7 @@ class Evidence(BaseModel):
 class Perpetrator(BaseModel):
     name: str
     type: str 
+
 class Case(Document):
     case_id: str = Field(..., unique=True) 
     title: str
@@ -30,9 +30,9 @@ class Case(Document):
     date_occurred: datetime
     date_reported: datetime
     victims: List[str] = []  
-    perpetrators: List[Perpetrator] = []
+    perpetrators: List[Perpetrator] = [] 
     evidence: List[Evidence] = []
-    created_by: str 
+    created_by: Link[User]  # Explicitly reference your User model
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

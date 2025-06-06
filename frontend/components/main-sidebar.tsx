@@ -71,9 +71,9 @@ export function MainSidebar() {
   }, []);
 
   const handleLogout = () => {
-    console.log('[MainSidebar] Initiating logout');
+
     logout();
-    console.log('[MainSidebar] Tokens cleared, navigating to /login');
+
     router.push('/login');
     if (isMobile) {
       setMobileOpen(false);

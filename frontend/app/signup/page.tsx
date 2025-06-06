@@ -21,9 +21,7 @@ export default function SignUp() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      console.log('[SignUp] Component mounted, current path:', window.location.pathname);
-      console.log('[SignUp] Auth state:', { isLoading, authError, isAuthenticated: !!user });
-      // Prevent redirect if already on /signup
+
       if (window.location.pathname !== '/signup') {
         console.warn('[SignUp] Unexpected path, current:', window.location.pathname);
       }
@@ -33,29 +31,29 @@ export default function SignUp() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    console.log('[SignUp] Submitting signup form with email:', email);
+
 
     // Client-side validation
     if (password !== passwordConfirm) {
       setError('Passwords do not match');
-      console.log('[SignUp] Validation failed: Passwords do not match');
+
       return;
     }
     if (!termsAgreed) {
       setError('You must agree to the Terms and Conditions');
-      console.log('[SignUp] Validation failed: Terms not agreed');
+
       return;
     }
     if (!firstName || !lastName) {
       setError('First and last name are required');
-      console.log('[SignUp] Validation failed: Name fields missing');
+
       return;
     }
 
     try {
       const fullName = `${firstName} ${lastName}`;
       await signup(email, fullName, password);
-      console.log('[SignUp] Signup successful, navigating to /login');
+
       setFirstName('');
       setLastName('');
       setEmail('');

@@ -31,7 +31,7 @@ async def init_db():
             database=client[settings.DATABASE_NAME],
             document_models=[Case, User, IncidentReport, ReportEvidenceDocument,Victim, VictimRiskAssessment]
         )
-        print(f"Connected to MongoDB database: {settings.DATABASE_NAME}")
+
     except Exception as e:
         print(f"Failed to initialize MongoDB: {str(e)}")
         raise

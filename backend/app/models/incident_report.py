@@ -1,18 +1,19 @@
-from beanie import Document, PydanticObjectId
+from beanie import Document, Link, PydanticObjectId
 from pydantic import BaseModel, Field, EmailStr
 from datetime import datetime
 from typing import List, Optional, Dict
-from bson import ObjectId
+
+from app.models.user import User
 
 class ContactInfo(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    preferred_contact: Optional[str] = None  # e.g., "email", "phone"
+    preferred_contact: Optional[str] = None
 
 class IncidentLocation(BaseModel):
     country: str
     city: Optional[str] = None
-    coordinates: Optional[Dict] = None  # GeoJSON Point: {"type": "Point", "coordinates": [lon, lat]}
+    coordinates: Optional[Dict] = None
 
 class IncidentDetails(BaseModel):
     date: datetime
@@ -21,19 +22,19 @@ class IncidentDetails(BaseModel):
     violation_types: List[str]
 
 class ReportEvidence(BaseModel):
-    type: str  # e.g., "video", "photo", "document"
+    type: str
     url: str
     description: Optional[str] = None
+    date_captured: Optional[datetime] = None
 
 class IncidentReport(Document):
-    report_id: str = Field(..., unique=True)  # e.g., "IR-2023-0789"
-    reporter_type: str  # e.g., "victim", "witness"
+    report_id: str = Field(..., unique=True)
+    reporter_type: str
     anonymous: bool = False
     contact_info: Optional[ContactInfo] = None
     incident_details: IncidentDetails
-    evidence: List[ReportEvidence] = []
-    status: str = "new"  # e.g., "new", "under_review", "closed"
-    assigned_to: Optional[str] = None  # PydanticObjectId to str for simplicity
+    status: str = "new"
+    assigned_to: Optional[Link[User]] = None  # Link to User model
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -42,10 +43,11 @@ class IncidentReport(Document):
         indexes = ["report_id"]
 
 class ReportEvidenceDocument(Document):
-    report_id: str  # References IncidentReport.report_id
+    report_id: str
     type: str
     url: str
     description: Optional[str] = None
+    date_captured: Optional[datetime] = None
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Settings:
