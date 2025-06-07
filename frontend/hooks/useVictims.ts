@@ -1,57 +1,75 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { victimsService, CreateVictimData, UpdateVictimData } from '../services/victims.service';
+import { victimsService, VictimsQueryParams, CreateVictimData, UpdateVictimData } from '../services/victims.service';
+import { casesService, CasesQueryParams } from '../services/cases.service';
 
-export const useVictim = (victimId: string) => {
-  const { data: victim, isLoading, error } = useQuery({
-    queryKey: ['victim', victimId],
-    queryFn: () => victimsService.getVictim(victimId),
-    enabled: !!victimId,
-  });
+export const useVictims = (caseId: string, params?: VictimsQueryParams) => {
+  const queryClient = useQueryClient();
 
-  return {
-    victim,
-    isLoading,
-    error,
-  };
-};
-
-export const useCaseVictims = (caseId: string) => {
   const { data: victims, isLoading, error } = useQuery({
-    queryKey: ['case-victims', caseId],
-    queryFn: () => victimsService.getCaseVictims(caseId),
+    queryKey: ['victims', caseId, params],
+    queryFn: () => victimsService.getVictimsByCase(caseId, params),
     enabled: !!caseId,
   });
-
-  return {
-    victims,
-    isLoading,
-    error,
-  };
-};
-
-export const useVictimMutations = () => {
-  const queryClient = useQueryClient();
 
   const createVictimMutation = useMutation({
     mutationFn: (data: CreateVictimData) => victimsService.createVictim(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['case-victims'] });
+      queryClient.invalidateQueries({ queryKey: ['victims', caseId] });
+    },
+    onError: (error) => {
+      console.error('Failed to create victim:', error);
     },
   });
 
   const updateVictimMutation = useMutation({
     mutationFn: ({ victimId, data }: { victimId: string; data: UpdateVictimData }) =>
       victimsService.updateVictim(victimId, data),
-    onSuccess: (_, { victimId }) => {
-      queryClient.invalidateQueries({ queryKey: ['victim', victimId] });
-      queryClient.invalidateQueries({ queryKey: ['case-victims'] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['victims', caseId] });
+      queryClient.invalidateQueries({ queryKey: ['victim'] });
+    },
+    onError: (error) => {
+      console.error('Failed to update victim:', error);
     },
   });
 
   return {
+    victims,
+    isLoading,
+    error,
     createVictim: createVictimMutation.mutate,
     updateVictim: updateVictimMutation.mutate,
     isCreating: createVictimMutation.isPending,
     isUpdating: updateVictimMutation.isPending,
+    createError: createVictimMutation.error,
+    updateError: updateVictimMutation.error,
   };
-}; 
+};
+
+export const useVictim = (victimId: string) => {
+  const { data: victimData, isLoading, error } = useQuery({
+    queryKey: ['victim', victimId],
+    queryFn: () => victimsService.getVictim(victimId),
+    enabled: !!victimId,
+  });
+
+  return {
+    victim: victimData,
+    isLoading,
+    error,
+  };
+};
+
+export const useCasesForVictimSelection = (params?: CasesQueryParams) => {
+  const { data: cases, isLoading, error } = useQuery({
+    queryKey: ['cases', params],
+    
+    queryFn: () => casesService.getCases(params),
+  });
+
+  return {
+    cases,
+    isLoading,
+    error,
+  };
+};

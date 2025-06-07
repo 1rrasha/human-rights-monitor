@@ -4,7 +4,7 @@ import type React from "react"
 import { useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/components/ui/use-toast"
-import { createReport } from "@/services/reports.service"
+import { createReport } from "@/services/analytics.service"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,21 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { Calendar, FileUp, MapPin, Shield, Upload, CheckCircle2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet"
+import L from "leaflet"
+
+// Fix Leaflet default icon issue in React
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+})
+
+interface Coordinates {
+  lat: number
+  lng: number
+}
 
 export function ReportForm() {
   const router = useRouter()
@@ -35,8 +50,22 @@ export function ReportForm() {
     country: "",
     city: "",
     description: "",
-    violation_types: [""]
+    violation_types: [""],
+    coordinates: null as Coordinates | null
   })
+
+  // Map click handler component
+  function MapClickHandler() {
+    useMapEvents({
+      click(e) {
+        setFormData(prev => ({
+          ...prev,
+          coordinates: { lat: e.latlng.lat, lng: e.latlng.lng }
+        }))
+      }
+    })
+    return null
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target
@@ -105,7 +134,7 @@ export function ReportForm() {
           location: {
             country: formData.country,
             city: formData.city,
-            coordinates: {}
+            coordinates: formData.coordinates || {}
           },
           description: formData.description,
           violation_types: [formData.violation_types[0]]
@@ -139,7 +168,8 @@ export function ReportForm() {
         country: "",
         city: "",
         description: "",
-        violation_types: [""]
+        violation_types: [""],
+        coordinates: null
       })
       setUploadedFiles([])
       setReporterType("victim")
@@ -327,9 +357,13 @@ export function ReportForm() {
                     <SelectValue placeholder="Select violation type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="discrimination">Discrimination</SelectItem>
-                    <SelectItem value="violence">Violence</SelectItem>
+                    <SelectItem value="arbitrary_detention">Arbitrary Detention</SelectItem>
+                    <SelectItem value="forced_displacement">Forced Displacement</SelectItem>
+                    <SelectItem value="torture">Torture</SelectItem>
+                    <SelectItem value="property_destruction">Property Destruction</SelectItem>
+                    <SelectItem value="freedom_restriction">Freedom Restriction</SelectItem>
                     <SelectItem value="harassment">Harassment</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -357,6 +391,31 @@ export function ReportForm() {
                   />
                 </div>
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Select Location on Map (Optional)</Label>
+              <div className="h-64 rounded-md overflow-hidden border border-muted">
+                <MapContainer
+                  center={[51.505, -0.09]} // Default center (London)
+                  zoom={13}
+                  style={{ height: "100%", width: "100%" }}
+                  className="z-10"
+                >
+                  <TileLayer
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                  />
+                  <MapClickHandler />
+                  {formData.coordinates && (
+                    <Marker position={[formData.coordinates.lat, formData.coordinates.lng]} />
+                  )}
+                </MapContainer>
+              </div>
+              {formData.coordinates && (
+                <p className="text-sm text-muted-foreground">
+                  Selected: Lat {formData.coordinates.lat.toFixed(4)}, Lng {formData.coordinates.lng.toFixed(4)}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description of Incident</Label>

@@ -32,29 +32,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchUser = async () => {
-
+  const fetchUser = async () => {
+    try {
       const currentUser = await authService.getCurrentUser();
       setUser(currentUser);
+    } catch (err) {
+      console.error('[AuthContext] Failed to fetch user:', err);
+      setUser(null);
+    } finally {
       setLoading(false);
+    }
+  };
 
-    };
+  useEffect(() => {
     fetchUser();
   }, []);
 
   const login = async (email: string, password: string) => {
-
     setIsLoading(true);
     try {
       setError(null);
       await authService.login({ email, password });
-      const currentUser = await authService.getCurrentUser();
-      if (!currentUser) {
-        throw new Error('Failed to fetch user details after login');
-      }
-      setUser(currentUser);
-      console.log('[AuthContext] Login successful, user:', currentUser.full_name);
+      // Fetch user details immediately after successful login
+      await fetchUser();
+      console.log('[AuthContext] Login successful, user:', user?.full_name);
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'An error occurred during login';
       setError(errorMessage);
@@ -71,6 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setError(null);
       await authService.signup({ email, full_name: username, password });
+      // After successful signup, fetch user details
+      await fetchUser();
       console.log('[AuthContext] Signup successful');
     } catch (err: any) {
       const errorMessage = err.response?.data?.detail || 'An error occurred during signup';

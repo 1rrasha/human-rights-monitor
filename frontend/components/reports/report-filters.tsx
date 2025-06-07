@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ReportsQueryParams } from "@/services/reports.service"
+import { ReportsQueryParams } from "@/services/analytics.service"
 
 interface ReportFiltersProps {
   onFiltersChange: (filters: ReportsQueryParams) => void

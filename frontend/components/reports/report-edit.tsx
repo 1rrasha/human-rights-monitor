@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Report, UpdateReportData } from "@/services/reports.service"
+import { Report, UpdateReportData } from "@/services/analytics.service"
 
 interface ReportEditProps {
   report: Report

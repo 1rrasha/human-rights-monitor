@@ -1,3 +1,4 @@
+from beanie import PydanticObjectId
 from app.models.victim import Victim, VictimRiskAssessment
 from app.schemas.victim import VictimCreate, VictimUpdate, VictimOut
 from app.models.user import User
@@ -7,24 +8,23 @@ from typing import Optional, List
 from beanie.operators import In
 
 async def create_victim(victim: VictimCreate, user_id: str) -> Victim:
-    # Validate case IDs exist
+    from app.models.case import Case
+    # Validate case IDs and resolve to Link[Case]
+    cases = []
     if victim.cases_involved:
-        from app.models.case import Case
-        existing_cases = await Case.find(In(Case.case_id, victim.cases_involved)).to_list()
-        if len(existing_cases) != len(victim.cases_involved):
+        cases = await Case.find(In(Case.case_id, victim.cases_involved)).to_list()
+        if len(cases) != len(victim.cases_involved):
             raise HTTPException(status_code=400, detail="One or more case IDs are invalid")
 
-    # Prepare victim data
     victim_data = victim.model_dump()
+    victim_data["cases_involved"] = cases  # Assign resolved Case documents
     victim_data["created_by"] = user_id
     victim_data["created_at"] = datetime.utcnow()
     victim_data["updated_at"] = datetime.utcnow()
 
-    # Create and save victim
     db_victim = Victim(**victim_data)
     await db_victim.insert()
 
-    # Save risk assessment if provided
     if victim.risk_assessment:
         risk_assessment = VictimRiskAssessment(
             victim_id=str(db_victim.id),
@@ -36,7 +36,6 @@ async def create_victim(victim: VictimCreate, user_id: str) -> Victim:
         await risk_assessment.insert()
 
     return db_victim
-
 async def get_victim(victim_id: str, current_user: User) -> Victim:
     victim = await Victim.find_one(Victim.id == PydanticObjectId(victim_id))
     if not victim:
@@ -77,7 +76,14 @@ async def update_victim(victim_id: str, victim_update: VictimUpdate, user_id: st
 
 async def list_victims_by_case(case_id: str, current_user: User) -> List[Victim]:
     from app.models.case import Case
-    case = await Case.find_one(Case.case_id == case_id)
+    # Validate and convert case_id to ObjectId
+    try:
+        case_id_obj = PydanticObjectId(case_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid case ID format")
+
+    # Find case by _id
+    case = await Case.find_one(Case.id == case_id_obj)
     if not case:
         raise HTTPException(status_code=404, detail="Case not found")
 
@@ -85,5 +91,13 @@ async def list_victims_by_case(case_id: str, current_user: User) -> List[Victim]
     if current_user.role not in ["admin", "case_worker"]:
         raise HTTPException(status_code=403, detail="Unauthorized to view victim details")
 
-    victims = await Victim.find(In(Victim.cases_involved, [case_id])).to_list()
+    # Find victims where cases_involved contains the case's _id
+    victims = await Victim.find(
+        {"cases_involved": {
+            "$elemMatch": {
+                "$ref": "cases",
+                "$id": case_id_obj
+            }
+        }}
+    ).to_list()
     return victims

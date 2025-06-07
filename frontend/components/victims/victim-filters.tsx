@@ -2,119 +2,102 @@
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { SlidersHorizontal, X } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+import { Card, CardContent } from "@/components/ui/card"
+import { useState } from "react"
+import { VictimsQueryParams } from "@/services/victims.service"
+import { useCasesForVictimSelection } from "@/hooks/useVictims"
 
-export function VictimFilters() {
+interface VictimFiltersProps {
+  onFiltersChange: (filters: VictimsQueryParams) => void
+  onCaseChange: (caseId: string) => void
+}
+
+export function VictimFilters({ onFiltersChange, onCaseChange }: VictimFiltersProps) {
+  const [filters, setFilters] = useState<VictimsQueryParams>({ skip: 0, limit: 10 })
+  const [activeFilters, setActiveFilters] = useState<string[]>([])
+  const { cases } = useCasesForVictimSelection()
+
+  const addFilter = (filter: string, key: keyof VictimsQueryParams, value: string) => {
+    if (!activeFilters.includes(filter)) {
+      setActiveFilters([...activeFilters, filter])
+      const newFilters = { ...filters, [key]: value }
+      setFilters(newFilters)
+      onFiltersChange(newFilters)
+    }
+  }
+
+  const removeFilter = (filter: string, key: keyof VictimsQueryParams) => {
+    setActiveFilters(activeFilters.filter((f) => f !== filter))
+    const newFilters = { ...filters, [key]: undefined }
+    setFilters(newFilters)
+    onFiltersChange(newFilters)
+  }
+
   return (
-    <div className="flex flex-col sm:flex-row gap-4">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input placeholder="Search victims or witnesses..." className="pl-9" />
-      </div>
+    <Card className="border-none shadow-none bg-transparent">
+      <CardContent className="p-0 space-y-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <Select
+            onValueChange={(value) => {
+              onCaseChange(value)
+              setActiveFilters([...activeFilters, `Case: ${value}`])
+            }}
+          >
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select Case" />
+            </SelectTrigger>
+            <SelectContent>
+              {cases?.map((caseItem) => (
+                <SelectItem key={caseItem._id} value={caseItem._id}>
+                  {caseItem.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-      <div className="flex flex-wrap gap-2">
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="victim">Victim</SelectItem>
-            <SelectItem value="witness">Witness</SelectItem>
-          </SelectContent>
-        </Select>
+          <Select
+            value={filters.status || "all"}
+            onValueChange={(value) =>
+              value !== "all" && addFilter(`Status: ${value}`, "status", value)
+            }
+          >
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="monitored">Monitored</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
 
-        <Select defaultValue="all">
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Risk Level" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Risk Levels</SelectItem>
-            <SelectItem value="high">High</SelectItem>
-            <SelectItem value="medium">Medium</SelectItem>
-            <SelectItem value="low">Low</SelectItem>
-          </SelectContent>
-        </Select>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <SlidersHorizontal className="h-4 w-4" />
-              <span>More Filters</span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <h4 className="font-medium">Demographics</h4>
-                <Separator />
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select>
-                      <SelectTrigger id="gender">
-                        <SelectValue placeholder="Any" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="age-range">Age Range</Label>
-                    <Select>
-                      <SelectTrigger id="age-range">
-                        <SelectValue placeholder="Any" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="any">Any</SelectItem>
-                        <SelectItem value="under18">Under 18</SelectItem>
-                        <SelectItem value="18-30">18-30</SelectItem>
-                        <SelectItem value="31-50">31-50</SelectItem>
-                        <SelectItem value="over50">Over 50</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
+        </div>
 
-              <div className="space-y-2">
-                <h4 className="font-medium">Protection Status</h4>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="protection-needed" />
-                    <Label htmlFor="protection-needed">Protection Needed</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="anonymous" />
-                    <Label htmlFor="anonymous">Anonymous</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="support-services" />
-                    <Label htmlFor="support-services">Receiving Support Services</Label>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end">
-                <Button variant="outline" size="sm" className="mr-2">
-                  Reset
-                </Button>
-                <Button size="sm">Apply Filters</Button>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
-      </div>
-    </div>
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap gap-2 animate-fade-in">
+            {activeFilters.map((filter) => (
+              <Button
+                key={filter}
+                variant="secondary"
+                className="px-3 py-1 gap-1 bg-primary/10 hover:bg-primary/20 text-primary"
+                onClick={() => {
+                  const key = filter.startsWith("Status") ? "status" : "case_id"
+                  removeFilter(filter, key)
+                  if (filter.startsWith("Case")) onCaseChange("")
+                }}
+              >
+                {filter}
+                <X className="h-3 w-3" />
+                <span className="sr-only">Remove filter</span>
+              </Button>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

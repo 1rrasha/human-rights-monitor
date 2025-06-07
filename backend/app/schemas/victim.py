@@ -65,7 +65,7 @@ class VictimOut(BaseModel):
     anonymous: bool
     pseudonym: Optional[str] = None
     demographics: Optional[Demographics] = None
-    contact_info: Optional[ContactInfo] = None  # Explicitly optional
+    contact_info: Optional[ContactInfo] = None
     cases_involved: List[str]
     risk_assessment: Optional[RiskAssessment] = None
     support_services: List[SupportService]
@@ -76,8 +76,13 @@ class VictimOut(BaseModel):
     def from_document(cls, doc, include_sensitive: bool = False):
         doc_dict = doc.dict()
         doc_dict["_id"] = str(doc.id)
+        # Convert cases_involved from List[Link[Case]] or List[Case] to List[str]
+        doc_dict["cases_involved"] = [
+            case.case_id if hasattr(case, "case_id") else str(case.get("id"))
+            for case in doc_dict.get("cases_involved", [])
+        ]
         if not include_sensitive:
-            doc_dict["contact_info"] = None  # Set to None instead of removing
+            doc_dict["contact_info"] = None
         return cls(**doc_dict)
 
     class Config:

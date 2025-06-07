@@ -35,6 +35,7 @@ class IncidentReport(Document):
     incident_details: IncidentDetails
     status: str = "new"
     assigned_to: Optional[Link[User]] = None  # Link to User model
+    
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

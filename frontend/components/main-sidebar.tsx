@@ -31,7 +31,7 @@ import Image from 'next/image';
 const navItems = [
   {
     title: 'Dashboard',
-    href: '/',
+    href: '/dashboard',
     icon: BarChart3,
   },
   {
@@ -71,9 +71,7 @@ export function MainSidebar() {
   }, []);
 
   const handleLogout = () => {
-
     logout();
-
     router.push('/login');
     if (isMobile) {
       setMobileOpen(false);
@@ -82,6 +80,7 @@ export function MainSidebar() {
 
   // Get user initials for avatar
   const getInitials = (name: string) => {
+    if (!name) return 'GU'; // Guest User
     return name
       .split(' ')
       .map((part) => part.charAt(0))
@@ -90,7 +89,24 @@ export function MainSidebar() {
       .slice(0, 2);
   };
 
-  if (!mounted) return null;
+  // Don't render anything until mounted to prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="h-screen bg-background border-r flex flex-col transition-all duration-300 ease-in-out relative z-10 w-[70px]">
+        <div className="p-4 border-b flex items-center justify-center">
+          <div className="relative flex-shrink-0">
+            <Image
+              src="/human_logo.png"
+              alt="Human Rights Monitor Logo"
+              width={48}
+              height={48}
+              className="object-contain"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isMobile) {
     return (

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import { useState } from 'react';
-import { useAuth } from '../../hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
 
 export default function Login() {
@@ -21,9 +21,8 @@ export default function Login() {
     e.preventDefault();
     setLocalError(null);
 
-
     try {
-      await login({ email, password });
+      await login(email, password);
       // Handle navigation after successful login
       router.push(redirect);
     } catch (err: any) {
@@ -31,7 +30,6 @@ export default function Login() {
       const errorMessage = err.response?.data?.detail || err.message || 'Invalid email or password. Please try again.';
       setLocalError(errorMessage);
       setPassword(''); // Clear password field on error
-
     }
   };
 

@@ -1,13 +1,13 @@
-from beanie import Document, PydanticObjectId
-from pydantic import BaseModel, Field, EmailStr
+from beanie import Document, Link
+from pydantic import BaseModel, Field, EmailStr, constr
 from datetime import datetime
-from typing import List, Optional, Dict
-from bson import ObjectId
+from typing import List, Optional
+from app.models.case import Case
 
 class ContactInfo(BaseModel):
     email: Optional[EmailStr] = None
     phone: Optional[str] = None
-    secure_messaging: Optional[str] = None  # e.g., "signal", "telegram"
+    secure_messaging: Optional[str] = None
 
 class Demographics(BaseModel):
     gender: Optional[str] = None
@@ -16,22 +16,34 @@ class Demographics(BaseModel):
     occupation: Optional[str] = None
 
 class RiskAssessment(BaseModel):
-    level: str  # e.g., "low", "medium", "high"
-    threats: List[str] = []  # e.g., ["intimidation", "surveillance"]
+    level: constr(pattern="^(low|medium|high)$")
+    threats: List[str] = []
     protection_needed: bool = False
 
+class VictimRiskAssessment(Document):
+    victim_id: str
+    level: str
+    threats: List[str] = []
+    protection_needed: bool = False
+    assessed_at: datetime = Field(default_factory=datetime.utcnow)
+    assessed_by: str
+
+    class Settings:
+        name = "victim_risk_assessments"
+        indexes = ["victim_id"]
+        
 class SupportService(BaseModel):
-    type: str  # e.g., "legal", "medical"
+    type: str
     provider: str
-    status: str  # e.g., "active", "completed"
+    status: str
 
 class Victim(Document):
-    type: str  # e.g., "victim", "witness"
+    type: str
     anonymous: bool = False
-    pseudonym: Optional[str] = None  # Used if anonymous=True
+    pseudonym: Optional[str] = None
     demographics: Optional[Demographics] = None
-    contact_info: Optional[ContactInfo] = None  # Marked for encryption
-    cases_involved: List[str] = []  # References Case.case_id
+    contact_info: Optional[ContactInfo] = None
+    cases_involved: List[Link[Case]] = []
     risk_assessment: Optional[RiskAssessment] = None
     support_services: List[SupportService] = []
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -40,15 +52,3 @@ class Victim(Document):
     class Settings:
         name = "victims"
         indexes = ["cases_involved"]
-
-class VictimRiskAssessment(Document):
-    victim_id: str  # References Victim.id
-    level: str
-    threats: List[str] = []
-    protection_needed: bool = False
-    assessed_at: datetime = Field(default_factory=datetime.utcnow)
-    assessed_by: str  # References User.id
-
-    class Settings:
-        name = "victim_risk_assessments"
-        indexes = ["victim_id"]

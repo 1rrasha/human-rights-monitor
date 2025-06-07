@@ -1,10 +1,9 @@
-import api from '../config/api';
+import api from "../config/api";
 
 export interface Victim {
   _id: string;
   type: string;
   anonymous: boolean;
-  pseudonym: string;
   demographics: {
     gender: string;
     age: number;
@@ -34,7 +33,6 @@ export interface Victim {
 export interface CreateVictimData {
   type: string;
   anonymous: boolean;
-  pseudonym: string;
   demographics: {
     gender: string;
     age: number;
@@ -57,30 +55,42 @@ export interface CreateVictimData {
     provider: string;
     status: string;
   }>;
+  files?: File[];
 }
 
 export interface UpdateVictimData {
   risk_assessment?: {
-    level: string;
-    threats: string[];
-    protection_needed: boolean;
+    level?: string;
+    threats?: string[];
+    protection_needed?: boolean;
   };
   support_services?: Array<{
     type: string;
     provider: string;
     status: string;
   }>;
-  contact_info?: {
-    email: string;
-    phone: string;
-    secure_messaging: string;
+  demographics?: {
+    gender?: string;
+    age?: number;
+    ethnicity?: string;
+    occupation?: string;
   };
-  cases_involved?: string[];
+  contact_info?: {
+    email?: string;
+    phone?: string;
+    secure_messaging?: string;
+  };
+  files?: File[];
+}
+
+export interface VictimsQueryParams {
+  skip?: number;
+  limit?: number;
 }
 
 export const victimsService = {
-  createVictim: async (data: CreateVictimData) => {
-    const response = await api.post<Victim>('/victims/', data);
+  getVictimsByCase: async (caseId: string, params?: VictimsQueryParams) => {
+    const response = await api.get<Victim[]>(`/victims/case/${caseId}`, { params });
     return response.data;
   },
 
@@ -89,13 +99,21 @@ export const victimsService = {
     return response.data;
   },
 
-  updateVictim: async (victimId: string, data: UpdateVictimData) => {
-    const response = await api.patch<Victim>(`/victims/${victimId}`, data);
+  createVictim: async (data: CreateVictimData) => {
+    console.log('Sending victim data:', data);
+    const response = await api.post<Victim>('/victims/', data, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    console.log('Backend response:', response.data);
     return response.data;
   },
 
-  getCaseVictims: async (caseId: string) => {
-    const response = await api.get<Victim[]>(`/victims/case/${caseId}`);
+  updateVictim: async (victimId: string, data: UpdateVictimData) => {
+    console.log('Sending victim_update:', data);
+    const response = await api.patch<Victim>(`/victims/${victimId}`, data, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    console.log('Backend response:', response.data);
     return response.data;
   },
-}; 
+};
