@@ -24,19 +24,19 @@ export function DashboardHeader() {
           </div>
 
           <div className="flex items-center gap-2 animate-slide-in-right">
-            <Button variant="ghost" size="icon" className="bg-white/10 hover:bg-white/20 text-white">
+            <Button variant="ghost" size="icon" className="bg-muted hover:bg-muted/80 text-foreground">
               <HelpCircle className="h-5 w-5" />
             </Button>
 
-            <Button variant="ghost" size="icon" className="bg-white/10 hover:bg-white/20 text-white">
+            <Button variant="ghost" size="icon" className="bg-muted hover:bg-muted/80 text-foreground">
               <Settings className="h-5 w-5" />
             </Button>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative bg-white/10 hover:bg-white/20 text-white">
+                <Button variant="ghost" size="icon" className="relative bg-muted hover:bg-muted/80 text-foreground">
                   <Bell className="h-5 w-5" />
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-accent text-white">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-primary text-primary-foreground">
                     3
                   </Badge>
                 </Button>
@@ -78,7 +78,7 @@ export function DashboardHeader() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="gap-2 bg-white/10 hover:bg-white/20 text-white">
+                <Button variant="ghost" className="gap-2 bg-muted hover:bg-muted/80 text-foreground">
                   <Calendar className="h-4 w-4" />
                   <span>Last 30 days</span>
                 </Button>
@@ -94,7 +94,7 @@ export function DashboardHeader() {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Avatar className="h-9 w-9 border-2 border-white/30 cursor-pointer hover:border-white/60 transition-colors">
+                <Avatar className="h-9 w-9 border-2 border-muted-foreground/30 cursor-pointer hover:border-muted-foreground/60 transition-colors">
                   <AvatarImage src="/placeholder.svg?height=36&width=36" />
                   <AvatarFallback>JD</AvatarFallback>
                 </Avatar>
@@ -129,36 +129,36 @@ export function DashboardHeader() {
 
         <div className="flex flex-col sm:flex-row gap-4 animate-slide-up">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/60" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search cases, reports, or victims..."
-              className="pl-9 bg-white/10 border-white/20 text-white placeholder:text-white/60 focus:bg-white/20"
+              className="pl-9 bg-muted border-muted-foreground/20 text-foreground placeholder:text-muted-foreground focus:bg-muted/80"
             />
           </div>
 
           <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full sm:w-auto">
-            <TabsList className="bg-white/10 p-1">
+            <TabsList className="bg-muted p-1">
               <TabsTrigger
                 value="all"
-                className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-foreground"
               >
                 All
               </TabsTrigger>
               <TabsTrigger
                 value="cases"
-                className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-foreground"
               >
                 Cases
               </TabsTrigger>
               <TabsTrigger
                 value="reports"
-                className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-foreground"
               >
                 Reports
               </TabsTrigger>
               <TabsTrigger
                 value="victims"
-                className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-foreground data-[state=active]:bg-muted/80 data-[state=active]:text-foreground"
               >
                 Victims
               </TabsTrigger>
@@ -166,11 +166,11 @@ export function DashboardHeader() {
           </Tabs>
 
           <div className="flex gap-2">
-            <Button variant="ghost" className="gap-2 bg-white/10 hover:bg-white/20 text-white">
+            <Button variant="ghost" className="gap-2 bg-muted hover:bg-muted/80 text-foreground">
               <Filter className="h-4 w-4" />
               <span>Filters</span>
             </Button>
-            <Button variant="ghost" className="gap-2 bg-white/10 hover:bg-white/20 text-white">
+            <Button variant="ghost" className="gap-2 bg-muted hover:bg-muted/80 text-foreground">
               <Download className="h-4 w-4" />
               <span>Export</span>
             </Button>
