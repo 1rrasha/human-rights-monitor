@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { getReports, Report, ReportsQueryParams, updateReport } from "@/services/analytics.service"
+import { getReports, Report, ReportsQueryParams, updateReport } from "@/services/reports.service"
 import { format } from "date-fns"
 import { Eye, MapPin, Shield } from "lucide-react"
 import { ReportDetails } from "./report-details"
@@ -58,6 +58,7 @@ export function ReportList({ filters }: ReportListProps) {
       ))
     } catch (err) {
       console.error("Failed to update report:", err)
+      throw err
     }
   }
 

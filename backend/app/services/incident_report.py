@@ -1,10 +1,10 @@
-from app.models.incident_report import IncidentReport, ReportEvidenceDocument
+from app.models.incident_report import IncidentDetails, IncidentReport, ReportEvidenceDocument
 from app.schemas.incident_report import AssignedUser, IncidentReportCreate, IncidentReportUpdate, ReportAnalyticsOut, IncidentReportOut, ReportEvidence
 from app.utils.file_handler import FileHandler
 from fastapi import HTTPException
 from datetime import datetime
 from typing import Optional, List
-from beanie import PydanticObjectId
+from beanie import Link, PydanticObjectId
 from beanie.operators import In, RegEx
 import httpx
 
@@ -166,15 +166,33 @@ async def update_incident_report(report_id: str, report_update: IncidentReportUp
         raise HTTPException(status_code=404, detail="Report not found")
 
     update_data = report_update.model_dump(exclude_unset=True)
+    # Remove assigned_to to prevent updates
+    update_data.pop("assigned_to", None)
     if update_data:
         for field, value in update_data.items():
             if field == "incident_details":
-                if value.location:
-                    coordinates = await geocode_location(value.location.dict())
-                    if coordinates:
-                        value.location.coordinates = coordinates
-                for subfield, subvalue in value.dict().items():
-                    setattr(report.incident_details, subfield, subvalue)
+                if value:
+                    # Validate violation_types if provided
+                    if "violation_types" in value:
+                        valid_violation_types = ["discrimination", "violence", "harassment"]
+                        if not all(vt in valid_violation_types for vt in value["violation_types"]):
+                            raise HTTPException(status_code=400, detail="Invalid violation type")
+
+                    # Geocode location if provided
+                    if "location" in value:
+                        coordinates = await geocode_location(value["location"])
+                        if coordinates:
+                            value["location"]["coordinates"] = coordinates
+
+                    # Create a new IncidentDetails instance to validate and update
+                    try:
+                        updated_details = IncidentDetails(**{
+                            **report.incident_details.dict(),  # Preserve existing fields
+                            **value  # Override with provided fields
+                        })
+                        report.incident_details = updated_details
+                    except ValueError as e:
+                        raise HTTPException(status_code=422, detail=f"Invalid incident details: {str(e)}")
             elif field == "evidence":
                 old_evidence = await ReportEvidenceDocument.find(ReportEvidenceDocument.report_id == report_id).to_list()
                 for doc in old_evidence:
@@ -190,11 +208,6 @@ async def update_incident_report(report_id: str, report_update: IncidentReportUp
                         date_captured=evidence.date_captured
                     )
                     await evidence_doc.insert()
-            elif field == "assigned_to":
-                if value:
-                    report.assigned_to = PydanticObjectId(value)
-                else:
-                    report.assigned_to = None
             else:
                 setattr(report, field, value)
 
@@ -212,19 +225,19 @@ async def update_incident_report(report_id: str, report_update: IncidentReportUp
     assigned_user = None
     if report.assigned_to:
         user = await report.assigned_to.fetch()
-        assigned_user = {
-            "id": str(user.id),
-            "name": user.name,
-            "email": user.email
-        }
+        assigned_user = AssignedUser(
+            id=str(user.id),
+            name=user.full_name if hasattr(user, 'full_name') else user.name,
+            email=user.email
+        )
 
+    report_data = report.dict(exclude={"assigned_to"})
+    report_data["_id"] = str(report.id)
     return IncidentReportOut(
-        **report.dict(exclude={"_id"}),
+        **report_data,
         evidence=evidence,
-        id=str(report.id),
         assigned_to=assigned_user
     )
-
 async def get_report_analytics() -> List[ReportAnalyticsOut]:
     pipeline = [
         {"$unwind": "$incident_details.violation_types"},
