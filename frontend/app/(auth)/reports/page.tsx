@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ReportFilters } from "@/components/reports/report-filters"
 import { ReportList } from "@/components/reports/report-list"
 import { ReportHeader } from "@/components/reports/report-header"
-import { ReportsQueryParams } from "@/services/analytics.service"
+import { ReportsQueryParams } from "@/services/reports.service"
 
 export default function ReportsPage() {
   const [filters, setFilters] = useState<ReportsQueryParams>({})

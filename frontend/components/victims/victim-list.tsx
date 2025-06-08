@@ -138,7 +138,7 @@ export function VictimList({ caseId, filters }: VictimListProps) {
             </div>
           ) : error.message.includes('403') ? (
             <div className="space-y-2">
-              <p className="font-medium">Permission Denied</p>
+              <p className="font-medium">Admin use</p>
               <p className="text-sm text-muted-foreground">You don't have permission to access this section.</p>
             </div>
           ) : (

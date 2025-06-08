@@ -10,9 +10,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
 import {
   Select,
   SelectContent,
@@ -20,27 +19,104 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Report, UpdateReportData } from "@/services/analytics.service"
+import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
+import { Report, UpdateReportData } from "@/services/reports.service"
 
 interface ReportEditProps {
   report: Report
   isOpen: boolean
   onClose: () => void
-  onSave: (reportId: string, data: UpdateReportData) => void
+  onSave: (reportId: string, data: UpdateReportData) => Promise<void>
 }
 
 export function ReportEdit({ report, isOpen, onClose, onSave }: ReportEditProps) {
+  const { toast } = useToast()
   const [editedReport, setEditedReport] = useState<UpdateReportData>({
-    report_update: {
+    report: JSON.stringify({
       status: report.status,
-      assigned_to: report.assigned_to,
-    },
+      incident_details: {
+        date: report.incident_details.date,
+        location: {
+          country: report.incident_details.location.country,
+          city: report.incident_details.location.city,
+        },
+        description: report.incident_details.description,
+        violation_types: report.incident_details.violation_types,
+      },
+    }),
   })
 
-  const handleSave = () => {
-    onSave(report._id, editedReport)
-    onClose()
+  const handleSave = async () => {
+    try {
+      await onSave(report.report_id, editedReport)
+      toast({
+        title: "Success",
+        description: "Report updated successfully",
+        duration: 3000,
+      })
+      onClose()
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Your session has expired. Please log in again.",
+          duration: 5000,
+        })
+        window.location.href = '/login'
+      } else if (error.response?.status === 403) {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "This action requires admin privileges",
+          duration: 5000,
+        })
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to update report. Please try again.",
+          duration: 5000,
+        })
+      }
+    }
   }
+
+  const updateReportData = (field: string, value: any) => {
+    const currentData = JSON.parse(editedReport.report)
+    const newData = {
+      ...currentData,
+      incident_details: {
+        ...currentData.incident_details,
+        [field]: value,
+      },
+    }
+    setEditedReport({
+      ...editedReport,
+      report: JSON.stringify(newData),
+    })
+  }
+
+  const updateLocation = (field: string, value: string) => {
+    const currentData = JSON.parse(editedReport.report)
+    const newData = {
+      ...currentData,
+      incident_details: {
+        ...currentData.incident_details,
+        location: {
+          ...currentData.incident_details.location,
+          [field]: value,
+        },
+      },
+    }
+    setEditedReport({
+      ...editedReport,
+      report: JSON.stringify(newData),
+    })
+  }
+
+  const currentData = JSON.parse(editedReport.report)
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -48,20 +124,24 @@ export function ReportEdit({ report, isOpen, onClose, onSave }: ReportEditProps)
         <DialogHeader>
           <DialogTitle>Edit Report</DialogTitle>
           <DialogDescription>
-            Update the report information
+            Update the report details
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="status">Status</Label>
             <Select
-              value={editedReport.report_update.status}
-              onValueChange={(value) =>
+              value={currentData.status}
+              onValueChange={(value) => {
+                const newData = {
+                  ...currentData,
+                  status: value,
+                }
                 setEditedReport({
                   ...editedReport,
-                  report_update: { ...editedReport.report_update, status: value },
+                  report: JSON.stringify(newData),
                 })
-              }
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
@@ -77,20 +157,49 @@ export function ReportEdit({ report, isOpen, onClose, onSave }: ReportEditProps)
           </div>
 
           <div className="grid gap-2">
-            <Label htmlFor="assigned_to">Assigned To</Label>
+            <Label htmlFor="date">Incident Date</Label>
             <Input
-              id="assigned_to"
-              value={editedReport.report_update.assigned_to}
-              onChange={(e) =>
-                setEditedReport({
-                  ...editedReport,
-                  report_update: {
-                    ...editedReport.report_update,
-                    assigned_to: e.target.value,
-                  },
-                })
-              }
+              type="datetime-local"
+              id="date"
+              value={currentData.incident_details.date.split('.')[0]}
+              onChange={(e) => updateReportData('date', new Date(e.target.value).toISOString())}
             />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="country">Country</Label>
+            <Input
+              id="country"
+              value={currentData.incident_details.location.country}
+              onChange={(e) => updateLocation('country', e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={currentData.incident_details.description}
+              onChange={(e) => updateReportData('description', e.target.value)}
+            />
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="violation_types">Violation Types</Label>
+            <Select
+              value={currentData.incident_details.violation_types[0]}
+              onValueChange={(value) => updateReportData('violation_types', [value])}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select violation type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="harassment">Harassment</SelectItem>
+                <SelectItem value="discrimination">Discrimination</SelectItem>
+                <SelectItem value="abuse">Abuse</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
